@@ -4,13 +4,13 @@ window.wp = window.wp || {};
 
 	wp.ShinyUpdates = {};
 
-	wp.ShinyUpdates.updatePlugin = function( plugin, pluginDir ) {
-		var $message = $( '#' + pluginDir + ' ~ .plugin-update-tr .update-message' ).first();
+	wp.ShinyUpdates.updatePlugin = function( plugin, slug ) {
+		var $message = $( '#' + slug ).next().find( '.update-message' );
 		var data = {
 			'action':      'shiny_plugin_update',
 			'_ajax_nonce': shinyUpdates.ajax_nonce,
 			'plugin':      plugin,
-			'pluginDir':   pluginDir
+			'slug':        slug
 		};
 
 		$.ajax({
@@ -28,7 +28,7 @@ window.wp = window.wp || {};
 
 	wp.ShinyUpdates.updateSuccess = function( response, status, xhr ) {
 		if ( response.success ) {
-			var $message = $( '#' + response.data.pluginDir + ' ~ .plugin-update-tr .update-message' ).first();
+			var $message = $( '#' + response.data.slug ).next().find( '.update-message' );
 
 			$message.removeClass( 'updating-message' ).addClass( 'updated-message' );
 			$message.text( shinyUpdates.updatedText );
@@ -43,16 +43,18 @@ window.wp = window.wp || {};
 		$( '.update-message a' ).on( 'click', function( e ) {
 			var link = e.target.href;
 
+			var $row = $( e.target ).parents( 'tr' ).prev();
+
 			// TODO: This can obviously be nicer when incorporated into core.
-			var re = /\/update.php\?action=upgrade-plugin&plugin=(([^%]+)(%2F[^&]+)?)/;
+			var re = /\/update.php\?action=upgrade-plugin&plugin=([^&]+)/;
 			var found = link.match( re );
 
-			if ( ! found || found.length < 3 ) {
+			if ( ! found || found.length < 2 ) {
 				return;
 			}
 
 			e.preventDefault();
-			wp.ShinyUpdates.updatePlugin( found[1], decodeURI( found[2] ) );
+			wp.ShinyUpdates.updatePlugin( found[1], $row.prop( 'id' ) );
 		});
 	});
 

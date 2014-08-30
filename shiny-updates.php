@@ -63,7 +63,7 @@ class ShinyUpdates {
 		$status = array(
 			'update'    => 'plugin',
 			'plugin'    => $plugin,
-			'pluginDir' => $_POST['pluginDir']
+			'slug'      => $_POST['slug']
 		);
 
 		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
