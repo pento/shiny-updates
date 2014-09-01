@@ -1,7 +1,7 @@
-== QUESTIONS ==
+#### QUESTIONS
 - Should the plugin Install button become "Install & Activate"?
 
-== CORE MERGE ==
+#### CORE MERGE
 - [ ] Add `data` properties to links, so we don't have to parse the URL
   - [ ] "update now" on `plugins.php`
   - [ ] "Update Now" on `plugin-install.php`
