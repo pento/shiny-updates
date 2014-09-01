@@ -32,11 +32,16 @@ class ShinyUpdates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
-		add_action( 'wp_ajax_shiny_plugin_update', array( $this, 'update_plugin' ) );
+		add_action( 'wp_ajax_shiny_plugin_update',  array( $this, 'update_plugin' ) );
+		add_action( 'wp_ajax_shiny_plugin_install', array( $this, 'install_plugin' ) );
 	}
 
 	function enqueue_scripts( $hook ) {
-		if ( 'plugins.php' !== $hook ) {
+		$pages = array(
+			'plugins.php',
+			'plugin-install.php'
+		);
+		if ( ! in_array( $hook, $pages ) ) {
 			return;
 		}
 
@@ -45,9 +50,11 @@ class ShinyUpdates {
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'jquery', 'updates' ) );
 
 		$data = array(
-			'ajax_nonce'   => wp_create_nonce( 'shiny-updates' ),
-			'updatingText' => __( 'Updating...' ),
-			'updatedText'  => __( 'Updated!' )
+			'ajax_nonce'     => wp_create_nonce( 'shiny-updates' ),
+			'updatingText'   => __( 'Updating...' ),
+			'updatedText'    => __( 'Updated!' ),
+			'installingText' => __( 'Installing...' ),
+			'installedText'  => __( 'Installed!' )
 		);
 		wp_localize_script( 'shiny-updates', 'shinyUpdates', $data );
 	}
@@ -56,7 +63,6 @@ class ShinyUpdates {
 		check_ajax_referer( 'shiny-updates' );
 
 		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' ); //for plugins_api..
 
 		$plugin = urldecode( $_POST['plugin'] );
 
@@ -75,6 +81,36 @@ class ShinyUpdates {
 		}
 
 		wp_send_json_success( $status );
+	}
+
+	function install_plugin() {
+		check_ajax_referer( 'shiny-updates' );
+
+		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
+		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' ); // for plugins_api..
+
+		$status = array(
+			'install' => 'plugin',
+			'slug'    => $_POST['slug']
+		);
+
+		$api = plugins_api('plugin_information', array('slug' => $_POST['slug'], 'fields' => array('sections' => false) ) ); //Save on a bit of bandwidth.
+
+		if ( is_wp_error( $api ) ) {
+	 		$status['error'] = $api->get_error_message();
+	 		wp_send_json_error( $status );
+	 	}
+
+		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
+		$result = $upgrader->install( $api->download_link );
+
+		if ( is_wp_error( $result ) ) {
+			$status['error'] = $result->get_error_message();
+	 		wp_send_json_error( $status );
+		}
+
+		wp_send_json_success( $status );
+
 	}
 }
 
