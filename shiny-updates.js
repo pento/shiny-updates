@@ -6,7 +6,7 @@ window.wp = window.wp || {};
 	wp.updates = wp.updates || {};
 
 	// Not needed in core.
-	wp.updates.l10n = _.extend( wp.updates.l10n, shinyUpdates );
+	wp.updates.l10n = _.extend( wp.updates.l10n, window.shinyUpdates );
 
 	/**
 	 * Send an Ajax request to the server to install a plugin.
@@ -47,8 +47,8 @@ window.wp = window.wp || {};
 		};
 
 		wp.ajax.post( 'install-plugin', data )
-			.done( wp.updates.installSuccess )
-			.fail( wp.updates.installError );
+			.done( wp.updates.installPluginSuccess )
+			.fail( wp.updates.installPluginError );
 	};
 
 	/**
@@ -58,7 +58,7 @@ window.wp = window.wp || {};
 	 *
 	 * @param {object} response
 	 */
-	wp.updates.installSuccess = function( response ) {
+	wp.updates.installPluginSuccess = function( response ) {
 		var $message = $( '.plugin-card-' + response.slug ).find( '.install-now' );
 
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message button-disabled' );
@@ -81,12 +81,12 @@ window.wp = window.wp || {};
 	 *
 	 * @param {object} response
 	 */
-	wp.updates.installError = function( response ) {
+	wp.updates.installPluginError = function( response ) {
 		var $message = $( '.plugin-card-' + response.slug ).find( '.install-now' );
 
 		wp.updates.updateDoneSuccessfully = false;
 
-		if (response.errorCode && 'unable_to_connect_to_filesystem' == response.errorCode ) {
+		if (response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'install-plugin' );
 			return;
 		}
@@ -95,6 +95,181 @@ window.wp = window.wp || {};
 		$message.text( wp.updates.l10n.installNow );
 
 		wp.updates.updateLock = false;
+	};
+
+	/**
+	 * Send an Ajax request to the server to update a theme.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {string} theme
+	 * @param {string} slug
+	 */
+	wp.updates.updateTheme = function( slug ) {
+		var $message = $( '#update-theme' ).closest( '.notice' ),
+			data;
+
+		$message.addClass( 'updating-message' );
+		$message.text( wp.updates.l10n.updating );
+		wp.a11y.speak( wp.updates.l10n.updatingMsg );
+
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'update-theme',
+					data: {
+						slug: slug
+					}
+			} );
+			return;
+		}
+
+		wp.updates.updateLock = true;
+
+		data = {
+			'_ajax_nonce': wp.updates.ajaxNonce,
+			'slug':        slug
+		};
+
+		wp.ajax.post( 'update-theme', data )
+			.done( wp.updates.updateThemeSuccess )
+			.fail( wp.updates.updateThemeError );
+	};
+
+	/**
+	 * On a successful theme update, update the UI with the result.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.updateThemeSuccess = function( response ) {
+		var $message = $( '.theme-info .notice' );
+		console.log($message);
+
+		$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
+		$message.text( wp.updates.l10n.updated );
+		$( '#' + response.slug ).find( '.theme-update').remove();
+
+		wp.a11y.speak( wp.updates.l10n.updatedMsg );
+
+		wp.updates.decrementCount( 'theme' );
+		wp.updates.updateDoneSuccessfully = true;
+
+		/*
+		 * The lock can be released since the update was successful,
+		 * and any other updates can commence.
+		 */
+		wp.updates.updateLock = false;
+
+		$( document ).trigger( 'wp-plugin-update-success', response );
+
+		wp.updates.queueChecker();
+	};
+
+	/**
+	 * On a theme update error, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.updateThemeError = function( response ) {
+		var $message = $( '.theme-info .notice' );
+
+		$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' );
+		$message.text( wp.updates.l10n.updateFailed );
+		wp.a11y.speak( wp.updates.l10n.updateFailed );
+
+		// The lock can be released since this failure was after the credentials form.
+		wp.updates.updateLock = false;
+
+		$( document ).trigger( 'wp-plugin-update-error', response );
+
+		wp.updates.queueChecker();
+	};
+
+	/**
+	 * Send an Ajax request to the server to install a theme.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {string} slug
+	 */
+	wp.updates.installTheme = function( slug ) {
+		var $message = $( '#' + slug ).find( '.theme-install'),
+			data;
+
+		$message.addClass( 'updating-message' );
+		$message.text( wp.updates.l10n.installing );
+		wp.a11y.speak( wp.updates.l10n.installingMsg );
+
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'install-theme',
+				data: {
+					slug: slug
+				}
+			} );
+			return;
+		}
+
+		wp.updates.updateLock = true;
+
+		data = {
+			'_ajax_nonce': wp.updates.ajaxNonce,
+			'slug':        slug
+		};
+
+		wp.ajax.post( 'install-theme', data )
+			.done( wp.updates.installThemeSuccess )
+			.fail( wp.updates.installThemeError );
+	};
+
+	/**
+	 * On theme install success, update the UI with the result.
+	 *
+	 * @since 4.5.0
+	 ** @param {object} response
+	 */
+	wp.updates.installThemeSuccess = function( response ) {
+		var $card = $( '#' + response.slug ),
+			$message = $card.find( '.theme-install' );
+
+		$message.removeClass( 'updating-message' ).addClass( 'updated-message button-disabled' );
+		$message.text( wp.updates.l10n.installed );
+		wp.a11y.speak( wp.updates.l10n.installedMsg );
+		$card.addClass( 'is-installed' ); // Hides the button, should show banner.
+
+		/*
+		 * The lock can be released since the update was successful,
+		 * and any other updates can commence.
+		 */
+		wp.updates.updateLock = false;
+
+		$( document ).trigger( 'wp-plugin-update-success', response );
+
+		wp.updates.queueChecker();
+	};
+
+	/**
+	 * On theme install failure, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.installThemeError = function( response ) {
+		var $message = $( '#' + response.slug ).find( '.theme-install' );
+
+		$message.removeClass( 'updating-message' );
+		$message.text( wp.updates.l10n.installNow );
+
+		// The lock can be released since this failure was after the credentials form.
+		wp.updates.updateLock = false;
+
+		$( document ).trigger( 'wp-plugin-update-error', response );
+
+		wp.updates.queueChecker();
 	};
 
 	/**
@@ -119,6 +294,14 @@ window.wp = window.wp || {};
 				wp.updates.installPlugin( job.data.slug );
 				break;
 
+			case 'update-theme':
+				wp.updates.updateTheme( job.data.slug );
+				break;
+
+			case 'install-theme':
+				wp.updates.installTheme( job.data.slug );
+				break;
+
 			default:
 				window.console.log( 'Failed to execute queued update job.', job );
 				break;
@@ -140,6 +323,56 @@ window.wp = window.wp || {};
 
 			wp.updates.installPlugin( $button.data( 'slug' ) );
 		} );
+
+		$( '#update-theme' ).on( 'click', function( event ) {
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials();
+			}
+
+			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
+		} );
+
+		$( '.theme-install' ).on( 'click', function( event ) {console.log(event);
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials();
+			}
+
+			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
+		} );
+	});
+
+	/**
+	 * Add id attribute in theme.js.
+	 */
+	wp.themes.view.Theme = wp.themes.view.Theme.extend({
+		render: function() {
+			var data = this.model.toJSON();
+			// Render themes using the html template
+			this.$el.html( this.html( data ) ).attr({
+				tabindex: 0,
+				'aria-describedby' : data.id + '-action ' + data.id + '-name',
+				'id': data.id
+			});
+
+			// Renders active theme styles
+			this.activeTheme();
+
+			if ( this.model.get( 'displayAuthor' ) ) {
+				this.$el.addClass( 'display-author' );
+			}
+
+			if ( this.model.get( 'installed' ) ) {
+				this.$el.addClass( 'is-installed' );
+			}
+		}
+	});
+
+	wp.themes.view.Preview = wp.themes.view.Preview.extend({
+		html: wp.themes.template( 'shiny-theme-preview' )
 	});
 
 })( jQuery, window.wp );
