@@ -2,112 +2,144 @@ window.wp = window.wp || {};
 
 (function( $, wp ) {
 
-	wp.ShinyUpdates = {};
+	// Not needed in core.
+	wp.updates = wp.updates || {};
 
-	wp.ShinyUpdates.updatePlugin = function( plugin, slug ) {
-		var $message = $( '#' + slug ).next().find( '.update-message' );
-		var data = {
-			'action':      'shiny_plugin_update',
-			'_ajax_nonce': shinyUpdates.ajax_nonce,
-			'plugin':      plugin,
-			'slug':        slug
-		};
+	// Not needed in core.
+	wp.updates.l10n = _.extend( wp.updates.l10n, shinyUpdates );
 
-		$.ajax({
-			type:     'post',
-			dataType: 'json',
-			url:       ajaxurl,
-			data:      data,
-			success:   wp.ShinyUpdates.updateSuccess,
-			error:     wp.ShinyUpdates.updateError
-		});
+	/**
+	 * Send an Ajax request to the server to install a plugin.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {string} slug
+	 */
+	wp.updates.installPlugin = function( slug ) {
+		var $message = $( '.plugin-card-' + slug ).find( '.install-now'),
+			data;
 
 		$message.addClass( 'updating-message' );
-		$message.text( shinyUpdates.updatingText );
-	};
+		$message.text( wp.updates.l10n.installing );
+		wp.a11y.speak( wp.updates.l10n.installingMsg );
 
-	wp.ShinyUpdates.updateSuccess = function( response, status, xhr ) {
-		if ( response.success ) {
-			var $message = $( '#' + response.data.slug ).next().find( '.update-message' );
-
-			$message.removeClass( 'updating-message' ).addClass( 'updated-message' );
-			$message.text( shinyUpdates.updatedText );
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'install-plugin',
+				data: {
+					slug: slug
+				}
+			} );
+			return;
 		}
-	};
 
-	wp.ShinyUpdates.updateError = function( xhr, status, error ) {
-		console.log( error );
-	};
+		wp.updates.updateLock = true;
 
-	wp.ShinyUpdates.installPlugin = function( slug ) {
-		var data = {
-			'action':      'shiny_plugin_install',
-			'_ajax_nonce': shinyUpdates.ajax_nonce,
-			'slug':        slug
+		data = {
+			_ajax_nonce:     wp.updates.ajaxNonce,
+			slug:            slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		};
 
-		$.ajax({
-			type:     'post',
-			dataType: 'json',
-			url:       ajaxurl,
-			data:      data,
-			success:   wp.ShinyUpdates.installSuccess,
-			error:     wp.ShinyUpdates.installError
-		});
+		wp.ajax.post( 'install-plugin', data )
+			.done( wp.updates.installSuccess )
+			.fail( wp.updates.installError );
+	};
 
-		$container = $( '#' + slug + '-card .install-now' ).parent();
-		$container.html( '<span class="button button-disabled installing">' + shinyUpdates.installingText + '</span>' );
-	}
+	/**
+	 * On plugin install success, update the UI with the result.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.installSuccess = function( response ) {
+		var $message = $( '.plugin-card-' + response.slug ).find( '.install-now' );
 
-	wp.ShinyUpdates.installSuccess = function( response, status, xhr ) {
-		if ( response.success ) {
-			$button = $( '#' + response.data.slug + '-card .installing' );
-			$button.removeClass( 'installing' ).addClass( 'installed' );
-			$button.text( shinyUpdates.installedText );
+		$message.removeClass( 'updating-message' ).addClass( 'updated-message button-disabled' );
+		$message.text( wp.updates.l10n.installed );
+		wp.a11y.speak( wp.updates.l10n.installedMsg );
+		wp.updates.updateDoneSuccessfully = true;
+
+		/*
+		 * The lock can be released since the update was successful,
+		 * and any other updates can commence.
+		 */
+		wp.updates.updateLock = false;
+		wp.updates.queueChecker();
+	};
+
+	/**
+	 * On plugin install failure, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.installError = function( response ) {
+		var $message = $( '.plugin-card-' + response.slug ).find( '.install-now' );
+
+		wp.updates.updateDoneSuccessfully = false;
+
+		if (response.errorCode && 'unable_to_connect_to_filesystem' == response.errorCode ) {
+			wp.updates.credentialError( response, 'install-plugin' );
+			return;
+		}
+
+		$message.removeClass( 'updating-message' );
+		$message.text( wp.updates.l10n.installNow );
+
+		wp.updates.updateLock = false;
+	};
+
+	/**
+	 * If an install/update job has been placed in the queue, queueChecker pulls it out and runs it.
+	 *
+	 * @since 4.2.0
+	 * @since 4.5.0 Can handle multiple job types.
+	 */
+	wp.updates.queueChecker = function() {
+		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
+			return;
+		}
+
+		var job = wp.updates.updateQueue.shift();
+
+		switch ( job.type ) {
+			case 'update-plugin':
+				wp.updates.updatePlugin( job.data.plugin, job.data.slug );
+				break;
+
+			case 'install-plugin':
+				wp.updates.installPlugin( job.data.slug );
+				break;
+
+			default:
+				window.console.log( 'Failed to execute queued update job.', job );
+				break;
 		}
 	};
 
-	wp.ShinyUpdates.installError = function( xhr, status, error ) {
-		console.log( error );
-	};
+	$( function() {
+		$( '#the-list' ).find( '.install-now' ).on( 'click', function( event ) {
+			var $button = $( event.target );
+			event.preventDefault();
 
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials();
+			}
 
-	$( document ).ready( function() {
-		$( '.update-message a' ).on( 'click', function( e ) {
-			var link = e.target.href;
-
-			var $row = $( e.target ).parents( 'tr' ).prev();
-
-			// TODO: This can obviously be nicer when incorporated into core.
-			var re = /\/update.php\?action=upgrade-plugin&plugin=([^&]+)/;
-			var found = link.match( re );
-
-			if ( ! found || found.length < 2 ) {
+			if ( $button.hasClass( 'button-disabled' ) ) {
 				return;
 			}
 
-			e.preventDefault();
-			wp.ShinyUpdates.updatePlugin( found[1], $row.prop( 'id' ) );
-		});
-
-		$( '.plugin-card .install-now' ).on( 'click', function( e ) {
-			var link = e.target.href;
-
-			var $row = $( e.target ).parents( 'tr' ).prev();
-
-			// TODO: This can obviously be nicer when incorporated into core.
-			var re = /\/update.php\?action=install-plugin&plugin=([^&]+)/;
-			var found = link.match( re );
-
-			if ( ! found || found.length < 2 ) {
-				return;
-			}
-
-			$( e.target ).parents( '.plugin-card' ).attr( 'id', found[1] + '-card' );
-
-			e.preventDefault();
-			wp.ShinyUpdates.installPlugin( found[1] );
-		});
+			wp.updates.installPlugin( $button.data( 'slug' ) );
+		} );
 	});
 
 })( jQuery, window.wp );

@@ -1,12 +1,3 @@
-.updating-message::before {
-    -webkit-animation: rotation 2s infinite linear;
-}
-
-@-webkit-keyframes rotation {
-    from {-webkit-transform: rotate(0deg);}
-    to   {-webkit-transform: rotate(359deg);}
-}
-
 .plugin-update-tr .updated-message::before {
 	color: #79ba49;
 	content: '\f147';
@@ -14,16 +5,16 @@
 
 
 .button.installing::before {
+	-webkit-animation: rotation 2s infinite linear;
 	color: #d54e21;
 	content: '\f463';
 	display: inline-block;
 	font: normal 20px/1 'dashicons';
-	speak: none;
-	margin: 0 8px 0 -2px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	speak: none;
+	margin: 0 8px 0 -2px;
 	vertical-align: top;
-    -webkit-animation: rotation 2s infinite linear;
 }
 
 .button.installed::before {
@@ -31,9 +22,9 @@
 	content: '\f147';
 	display: inline-block;
 	font: normal 20px/1 'dashicons';
-	speak: none;
-	margin: 0 8px 0 -2px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
+	speak: none;
+	margin: 0 8px 0 -2px;
 	vertical-align: top;
 }

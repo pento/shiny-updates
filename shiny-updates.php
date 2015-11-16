@@ -3,115 +3,93 @@
 /*
  * Plugin Name: Shiny Updates
  * Description: Hide the ugly parts of updating WordPress.
- * Author: pento
- * Version: 0.1
+ * Author: the WordPress team
+ * Version: 2
  * License: GPL2
  */
 
-// Don't allow the plugin to be loaded directly
-if ( ! function_exists( 'add_action' ) ) {
-	echo "Please enable this plugin from your wp-admin.";
-	exit;
-}
-
-/*
- * @package WordPress
- * @subpackage Upgrade/Install
- * @since 4.1.0
- */
-class ShinyUpdates {
+class Shiny_Updates {
 	static function init() {
 		static $instance;
 
 		if ( empty( $instance ) )
-			$instance = new ShinyUpdates();
+			$instance = new Shiny_Updates();
 
 		return $instance;
 	}
 
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-
-		add_action( 'wp_ajax_shiny_plugin_update',  array( $this, 'update_plugin' ) );
-		add_action( 'wp_ajax_shiny_plugin_install', array( $this, 'install_plugin' ) );
 	}
 
 	function enqueue_scripts( $hook ) {
-		$pages = array(
-			'plugins.php',
-			'plugin-install.php'
-		);
-		if ( ! in_array( $hook, $pages ) ) {
+		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php' ) ) ) {
 			return;
 		}
 
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.css' );
 
-		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'jquery', 'updates' ) );
-
-		$data = array(
-			'ajax_nonce'     => wp_create_nonce( 'shiny-updates' ),
-			'updatingText'   => __( 'Updating...' ),
-			'updatedText'    => __( 'Updated!' ),
-			'installingText' => __( 'Installing...' ),
-			'installedText'  => __( 'Installed!' )
-		);
-		wp_localize_script( 'shiny-updates', 'shinyUpdates', $data );
-	}
-
-	function update_plugin() {
-		check_ajax_referer( 'shiny-updates' );
-
-		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-
-		$plugin = urldecode( $_POST['plugin'] );
-
-		$status = array(
-			'update'    => 'plugin',
-			'plugin'    => $plugin,
-			'slug'      => $_POST['slug']
-		);
-
-		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
-		$result = $upgrader->upgrade( $plugin );
-
-		if ( is_wp_error( $result ) ) {
-			$status['error'] = $result->get_error_message();
-	 		wp_send_json_error( $status );
-		}
-
-		wp_send_json_success( $status );
-	}
-
-	function install_plugin() {
-		check_ajax_referer( 'shiny-updates' );
-
-		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' ); // for plugins_api..
-
-		$status = array(
-			'install' => 'plugin',
-			'slug'    => $_POST['slug']
-		);
-
-		$api = plugins_api('plugin_information', array('slug' => $_POST['slug'], 'fields' => array('sections' => false) ) ); //Save on a bit of bandwidth.
-
-		if ( is_wp_error( $api ) ) {
-	 		$status['error'] = $api->get_error_message();
-	 		wp_send_json_error( $status );
-	 	}
-
-		$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
-		$result = $upgrader->install( $api->download_link );
-
-		if ( is_wp_error( $result ) ) {
-			$status['error'] = $result->get_error_message();
-	 		wp_send_json_error( $status );
-		}
-
-		wp_send_json_success( $status );
-
+		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'updates' ) );
+		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
+			'installNow'    => __( 'Install Now' ),
+			'installing'    => __( 'Installing...' ),
+			'installed'     => __( 'Installed!' ),
+			'installFailed' => __( 'Installation failed' ),
+			'installingMsg' => __( 'Installing... please wait.' ),
+			'installedMsg'  => __( 'Installation completed successfully.' ),
+		) );
 	}
 }
+add_action( 'init', array( 'Shiny_Updates', 'init' ) );
 
-add_action( 'init', array( 'ShinyUpdates', 'init' ) );
+// No need to register the callback - we forgot to remove it from core in 4.2.
+/**
+ * AJAX handler for installing a plugin.
+ *
+ * @since 4.5.0
+ */
+function wp_ajax_install_plugin() {
+	$status = array(
+		'install' => 'plugin',
+		'slug'    => sanitize_key( $_POST['slug'] ),
+	);
+
+	if ( ! current_user_can( 'install_plugins' ) ) {
+		$status['error'] = __( 'You do not have sufficient permissions to install plugins on this site.' );
+		wp_send_json_error( $status );
+	}
+
+	check_ajax_referer( 'updates' );
+
+	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
+	include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
+
+	$api = plugins_api( 'plugin_information', array(
+		'slug'   => sanitize_key( $_POST['slug'] ),
+		'fields' => array(
+			'sections' => false,
+		),
+	) );
+
+	if ( is_wp_error( $api ) ) {
+		$status['error'] = $api->get_error_message();
+		wp_send_json_error( $status );
+	}
+
+	$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
+	$result = $upgrader->install( $api->download_link );
+
+	if ( is_wp_error( $result ) ) {
+		$status['error'] = $result->get_error_message();
+
+		wp_send_json_error( $status );
+
+	} else if ( is_null( $result ) ) {
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		wp_send_json_error( $status );
+	}
+
+	wp_send_json_success( $status );
+}
