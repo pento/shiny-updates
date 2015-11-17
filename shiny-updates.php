@@ -21,6 +21,9 @@ class Shiny_Updates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
+		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
+		add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
+
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
 
 		add_action( 'wp_ajax_install-theme', 'wp_ajax_install_theme' );
@@ -42,6 +45,9 @@ class Shiny_Updates {
 			'installFailed' => __( 'Installation failed' ),
 			'installingMsg' => __( 'Installing... please wait.' ),
 			'installedMsg'  => __( 'Installation completed successfully.' ),
+			'aysDelete'     => __( 'Are you sure you want to delete this plugin?' ),
+			'deletinggMsg'  => __( 'Deleting... please wait.' ),
+			'deletedMsg'    => __( 'Plugin successfully deleted.' ),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
@@ -51,6 +57,24 @@ class Shiny_Updates {
 		if ( 'theme-install.php' == $hook ) {
 			add_action( 'in_admin_header', array( $this, 'theme_install_templates' ) );
 		}
+	}
+
+	/**
+	 * Filter the action links displayed for each plugin in the Plugins list table.
+	 *
+	 * @param array  $actions     An array of plugin action links.
+	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @param array  $plugin_data An array of plugin data.
+	 * @param string $context     The plugin context.
+	 * @return array
+	 */
+	function plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
+		if ( ! empty( $actions['delete'] ) ) {
+			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
+			$actions['delete'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=delete-selected&amp;checked[]=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'bulk-plugins' ) . '" class="delete" aria-label="' . esc_attr( sprintf( __( 'Delete %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Delete' ) . '</a>';
+		}
+
+		return $actions;
 	}
 
 	/**
@@ -222,6 +246,53 @@ function wp_ajax_update_theme() {
 
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
+		wp_send_json_error( $status );
+	}
+
+	wp_send_json_success( $status );
+}
+
+/**
+ * AJAX handler for deleting a plugin.
+ *
+ * @since 4.5.0
+ */
+function wp_ajax_delete_plugin() {
+	$plugin      = urldecode( $_POST['plugin'] );
+	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
+
+	$status = array(
+		'delete' => 'plugin',
+		'id'     => sanitize_title( $plugin_data['Name'] ),
+		'slug'   => sanitize_key( $_POST['slug'] ),
+		'plugin' => $plugin,
+	);
+
+	if ( ! current_user_can('delete_plugins') ) {
+		$status['error'] = __( 'You do not have sufficient permissions to delete plugins for this site.' );
+		wp_send_json_error( $status );
+	}
+
+	if ( ! is_plugin_inactive( $plugin ) ) {
+		$status['error'] = __( 'You cannot delete a plugin while it is active on the main site.' );
+		wp_send_json_error( $status );
+	}
+
+	check_ajax_referer( 'updates' );
+
+	$delete_result = delete_plugins( array( $plugin ) );
+
+	if ( is_wp_error( $delete_result ) ) {
+		$status['error'] = $delete_result->get_error_message();
+		wp_send_json_error( $status );
+
+	} else if ( is_null( $delete_result ) ) {
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+		wp_send_json_error( $status );
+
+	} elseif ( false === $delete_result ) {
+		$status['error'] = __( 'Plugin could not be deleted.' );
 		wp_send_json_error( $status );
 	}
 

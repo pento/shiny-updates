@@ -16,7 +16,7 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.installPlugin = function( slug ) {
-		var $message = $( '.plugin-card-' + slug ).find( '.install-now'),
+		var $message = $( '.plugin-card-' + slug ).find( '.install-now' ),
 			data;
 
 		$message.addClass( 'updating-message' );
@@ -86,7 +86,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateDoneSuccessfully = false;
 
-		if (response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'install-plugin' );
 			return;
 		}
@@ -98,11 +98,93 @@ window.wp = window.wp || {};
 	};
 
 	/**
+	 * Send an Ajax request to the server to delete a plugin.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {string} plugin
+	 * @param {string} slug
+	 */
+	wp.updates.deletePlugin = function( plugin, slug ) {
+		wp.a11y.speak( wp.updates.l10n.deletinggMsg );
+
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'delete-plugin',
+				data: {
+					plugin: plugin,
+					slug: slug
+				}
+			} );
+			return;
+		}
+
+		wp.updates.updateLock = true;
+
+		var data = {
+			_ajax_nonce:     wp.updates.ajaxNonce,
+			plugin:          plugin,
+			slug:            slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
+		};
+
+		wp.ajax.post( 'delete-plugin', data )
+			.done( wp.updates.deletePluginSuccess )
+			.fail( wp.updates.deletePluginError );
+	};
+
+	/**
+	 * On plugin delete success, update the UI with the result.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.deletePluginSuccess = function( response ) {
+		wp.a11y.speak( wp.updates.l10n.deletedMsg );
+		wp.updates.updateDoneSuccessfully = true;
+
+		// Removes the plugin and updates rows.
+		$( '#' + response.slug + '-update, #' + response.id ).css({ backgroundColor:'#faafaa' }).fadeOut( 350, function() {
+			$( this ).remove();
+		});
+
+		/*
+		 * The lock can be released since the update was successful,
+		 * and any other updates can commence.
+		 */
+		wp.updates.updateLock = false;
+		wp.updates.queueChecker();
+	};
+
+	/**
+	 * On plugin delete failure, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.deletePluginError = function( response ) {
+		wp.updates.updateDoneSuccessfully = false;
+
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
+			wp.updates.credentialError( response, 'install-plugin' );
+			return;
+		}
+
+		wp.updates.updateLock = false;
+	};
+
+	/**
 	 * Send an Ajax request to the server to update a theme.
 	 *
 	 * @since 4.5.0
 	 *
-	 * @param {string} theme
 	 * @param {string} slug
 	 */
 	wp.updates.updateTheme = function( slug ) {
@@ -126,8 +208,14 @@ window.wp = window.wp || {};
 		wp.updates.updateLock = true;
 
 		data = {
-			'_ajax_nonce': wp.updates.ajaxNonce,
-			'slug':        slug
+			'_ajax_nonce':   wp.updates.ajaxNonce,
+			'slug':          slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		};
 
 		wp.ajax.post( 'update-theme', data )
@@ -215,8 +303,14 @@ window.wp = window.wp || {};
 		wp.updates.updateLock = true;
 
 		data = {
-			'_ajax_nonce': wp.updates.ajaxNonce,
-			'slug':        slug
+			'_ajax_nonce':   wp.updates.ajaxNonce,
+			'slug':          slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		};
 
 		return wp.ajax.post( 'install-theme', data )
@@ -308,7 +402,9 @@ window.wp = window.wp || {};
 	};
 
 	$( function() {
-		$( '#the-list' ).find( '.install-now' ).on( 'click', function( event ) {
+		var pluginList = $( '#the-list' );
+
+		pluginList.find( '.install-now' ).on( 'click', function( event ) {
 			var $button = $( event.target );
 			event.preventDefault();
 
@@ -321,6 +417,21 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.installPlugin( $button.data( 'slug' ) );
+		} );
+
+		pluginList.find( '.delete' ).on( 'click', 'a', function( event ) {
+			var $link = $( event.target );
+			event.preventDefault();
+
+			if ( ! confirm( wp.updates.l10n.aysDelete ) ) {
+				return;
+			}
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials();
+			}
+
+			wp.updates.deletePlugin( $link.data( 'plugin' ), $link.data( 'slug' ) );
 		} );
 	});
 
