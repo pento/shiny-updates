@@ -1,15 +1,21 @@
 .theme-info .updating-message::before,
-.theme-info .updated-message::before {
+.theme-info .updated-message::before,
+.theme-install.updating-message::before {
 	font: normal 18px/1 dashicons;
 	margin-right: 6px;
 	vertical-align: text-bottom;
 }
 
-.theme-info .updating-message:before {
+.theme-info .updating-message:before,
+.theme-install.updating-message:before {
 	color: #d54e21;
 	content: "\f463";
 	-webkit-animation: rotation 2s infinite linear;
 	animation: rotation 2s infinite linear;
+}
+
+.theme-install.updating-message:before {
+	color: #fff;
 }
 
 .theme-info .updated-message::before {

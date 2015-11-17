@@ -144,11 +144,10 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.updateThemeSuccess = function( response ) {
 		var $message = $( '.theme-info .notice' );
-		console.log($message);
 
 		$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
 		$message.text( wp.updates.l10n.updated );
-		$( '#' + response.slug ).find( '.theme-update').remove();
+		$( '#' + response.slug ).find( '.theme-update' ).remove();
 
 		wp.a11y.speak( wp.updates.l10n.updatedMsg );
 
@@ -196,7 +195,7 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.installTheme = function( slug ) {
-		var $message = $( '#' + slug ).find( '.theme-install'),
+		var $message = $( '.theme-install[data-slug="' + slug + '"]' ),
 			data;
 
 		$message.addClass( 'updating-message' );
@@ -220,7 +219,7 @@ window.wp = window.wp || {};
 			'slug':        slug
 		};
 
-		wp.ajax.post( 'install-theme', data )
+		return wp.ajax.post( 'install-theme', data )
 			.done( wp.updates.installThemeSuccess )
 			.fail( wp.updates.installThemeError );
 	};
@@ -233,9 +232,9 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.installThemeSuccess = function( response ) {
 		var $card = $( '#' + response.slug ),
-			$message = $card.find( '.theme-install' );
+			$message = $( '.theme-install[data-slug="' + response.slug + '"]' );
 
-		$message.removeClass( 'updating-message' ).addClass( 'updated-message button-disabled' );
+		$message.removeClass( 'updating-message' ).addClass( 'updated-message disabled' );
 		$message.text( wp.updates.l10n.installed );
 		wp.a11y.speak( wp.updates.l10n.installedMsg );
 		$card.addClass( 'is-installed' ); // Hides the button, should show banner.
@@ -323,56 +322,6 @@ window.wp = window.wp || {};
 
 			wp.updates.installPlugin( $button.data( 'slug' ) );
 		} );
-
-		$( '#update-theme' ).on( 'click', function( event ) {
-			event.preventDefault();
-
-			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials();
-			}
-
-			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
-		} );
-
-		$( '.theme-install' ).on( 'click', function( event ) {console.log(event);
-			event.preventDefault();
-
-			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials();
-			}
-
-			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
-		} );
-	});
-
-	/**
-	 * Add id attribute in theme.js.
-	 */
-	wp.themes.view.Theme = wp.themes.view.Theme.extend({
-		render: function() {
-			var data = this.model.toJSON();
-			// Render themes using the html template
-			this.$el.html( this.html( data ) ).attr({
-				tabindex: 0,
-				'aria-describedby' : data.id + '-action ' + data.id + '-name',
-				'id': data.id
-			});
-
-			// Renders active theme styles
-			this.activeTheme();
-
-			if ( this.model.get( 'displayAuthor' ) ) {
-				this.$el.addClass( 'display-author' );
-			}
-
-			if ( this.model.get( 'installed' ) ) {
-				this.$el.addClass( 'is-installed' );
-			}
-		}
-	});
-
-	wp.themes.view.Preview = wp.themes.view.Preview.extend({
-		html: wp.themes.template( 'shiny-theme-preview' )
 	});
 
 })( jQuery, window.wp );
