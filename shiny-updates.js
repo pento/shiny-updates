@@ -10,6 +10,18 @@ window.wp = window.wp || {};
 	wp.updates.l10n = _.extend( wp.updates.l10n, window.shinyUpdates );
 
 	/**
+	 * Actions performed after every Ajax request.
+	 *
+	 * @todo Maybe we can find a better function name here.
+	 *
+	 * @since 4.5.0
+	 */
+	wp.updates.ajaxAlways = function() {
+		wp.updates.updateLock = false;
+		wp.updates.queueChecker();
+	};
+
+	/**
 	 * Send an Ajax request to the server to install a plugin.
 	 *
 	 * @since 4.5.0
@@ -53,7 +65,8 @@ window.wp = window.wp || {};
 
 		wp.ajax.post( 'install-plugin', data )
 			.done( wp.updates.installPluginSuccess )
-			.fail( wp.updates.installPluginError );
+			.fail( wp.updates.installPluginError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -69,14 +82,9 @@ window.wp = window.wp || {};
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message button-disabled' );
 		$message.text( wp.updates.l10n.installed );
 		wp.a11y.speak( wp.updates.l10n.installedMsg );
-		wp.updates.updateDoneSuccessfully = true;
 
-		/*
-		 * The lock can be released since the update was successful,
-		 * and any other updates can commence.
-		 */
-		wp.updates.updateLock = false;
-		wp.updates.queueChecker();
+		wp.updates.updateDoneSuccessfully = true;
+		$document.trigger( 'wp-plugin-install-success', response );
 	};
 
 	/**
@@ -89,7 +97,6 @@ window.wp = window.wp || {};
 	wp.updates.installPluginError = function( response ) {
 		var $card   = $( '.plugin-card-' + response.slug ),
 			$button = $card.find( '.install-now' ),
-			$message,
 			errorMessage;
 
 		wp.updates.updateDoneSuccessfully = false;
@@ -120,15 +127,7 @@ window.wp = window.wp || {};
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
-		/*
-		 * The lock can be released since this failure was
-		 * after the credentials form.
-		 */
-		wp.updates.updateLock = false;
-
 		$document.trigger( 'wp-plugin-install-error', response );
-
-		wp.updates.queueChecker();
 	};
 
 	/**
@@ -169,7 +168,8 @@ window.wp = window.wp || {};
 
 		wp.ajax.post( 'delete-plugin', data )
 			.done( wp.updates.deletePluginSuccess )
-			.fail( wp.updates.deletePluginError );
+			.fail( wp.updates.deletePluginError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -188,12 +188,7 @@ window.wp = window.wp || {};
 			$( this ).remove();
 		});
 
-		/*
-		 * The lock can be released since the update was successful,
-		 * and any other updates can commence.
-		 */
-		wp.updates.updateLock = false;
-		wp.updates.queueChecker();
+		$document.trigger( 'wp-plugin-delete-success', response );
 	};
 
 	/**
@@ -211,7 +206,7 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		wp.updates.updateLock = false;
+		$document.trigger( 'wp-plugin-delete-error', response );
 	};
 
 	/**
@@ -257,7 +252,8 @@ window.wp = window.wp || {};
 
 		wp.ajax.post( 'update-theme', data )
 			.done( wp.updates.updateThemeSuccess )
-			.fail( wp.updates.updateThemeError );
+			.fail( wp.updates.updateThemeError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -283,15 +279,7 @@ window.wp = window.wp || {};
 		wp.updates.decrementCount( 'theme' );
 		wp.updates.updateDoneSuccessfully = true;
 
-		/*
-		 * The lock can be released since the update was successful,
-		 * and any other updates can commence.
-		 */
-		wp.updates.updateLock = false;
-
 		$document.trigger( 'wp-plugin-update-success', response );
-
-		wp.updates.queueChecker();
 	};
 
 	/**
@@ -309,12 +297,7 @@ window.wp = window.wp || {};
 		$message.text( errorMessage );
 		wp.a11y.speak( errorMessage );
 
-		// The lock can be released since this failure was after the credentials form.
-		wp.updates.updateLock = false;
-
 		$document.trigger( 'wp-theme-update-error', response );
-
-		wp.updates.queueChecker();
 	};
 
 	/**
@@ -360,7 +343,8 @@ window.wp = window.wp || {};
 
 		return wp.ajax.post( 'install-theme', data )
 			.done( wp.updates.installThemeSuccess )
-			.fail( wp.updates.installThemeError );
+			.fail( wp.updates.installThemeError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -378,15 +362,7 @@ window.wp = window.wp || {};
 		wp.a11y.speak( wp.updates.l10n.installedMsg );
 		$card.addClass( 'is-installed' ); // Hides the button, should show banner.
 
-		/*
-		 * The lock can be released since the update was successful,
-		 * and any other updates can commence.
-		 */
-		wp.updates.updateLock = false;
-
-		$document.trigger( 'wp-plugin-update-success', response );
-
-		wp.updates.queueChecker();
+		$document.trigger( 'wp-install-theme-success', response );
 	};
 
 	/**
@@ -415,8 +391,6 @@ window.wp = window.wp || {};
 			$card
 				.addClass( 'theme-install-failed' )
 				.append( '<div class="notice notice-error"><p>' + errorMessage + '</p></div>' );
-
-			
 		}
 
 		$button
@@ -425,12 +399,7 @@ window.wp = window.wp || {};
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
-		// The lock can be released since this failure was after the credentials form.
-		wp.updates.updateLock = false;
-
 		$document.trigger( 'wp-theme-install-error', response );
-
-		wp.updates.queueChecker();
 	};
 
 	/**
