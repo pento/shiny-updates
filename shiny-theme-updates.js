@@ -89,14 +89,19 @@ window.wp = window.wp || {};
 		},
 
 		installTheme: function( event ) {
-			var _this = this;
+			var _this  = this,
+				target = $( event.target );
 			event.preventDefault();
+
+			if ( target.hasClass( 'disabled' ) ) {
+				return;
+			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials();
 			}
 
-			wp.updates.installTheme( $( event.target ).data( 'slug' ) )
+			wp.updates.installTheme( target.data( 'slug' ) )
 				.done( function() {
 					_this.model.set({ 'installed': true });
 				});

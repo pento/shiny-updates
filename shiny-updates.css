@@ -23,6 +23,15 @@
 	content: '\f147';
 }
 
+.theme-install-php .theme .notice-error {
+	display: block;
+	left: 0;
+	margin-top: 0;
+	position: absolute;
+	top: 0;
+	right: 0;
+}
+
 .button.installing::before {
 	-webkit-animation: rotation 2s infinite linear;
 	color: #d54e21;

@@ -21,12 +21,19 @@ class Shiny_Updates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
+		// Plugin deletions.
 		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
 		add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
 
+		// Themes.
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
 
+		// Update Themes.
+		add_action( 'admin_footer_themes.php', array( $this, 'admin_footer' ) );
 		add_action( 'wp_ajax_install-theme', 'wp_ajax_install_theme' );
+
+		// Install Themes.
+		add_action( 'admin_footer_theme-install.php', array( $this, 'admin_footer' ) );
 		add_action( 'wp_ajax_update-theme', 'wp_ajax_update_theme' );
 	}
 
@@ -39,15 +46,23 @@ class Shiny_Updates {
 
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'updates' ), null, true );
 		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
-			'installNow'    => __( 'Install Now' ),
-			'installing'    => __( 'Installing...' ),
-			'installed'     => __( 'Installed!' ),
-			'installFailed' => __( 'Installation failed' ),
-			'installingMsg' => __( 'Installing... please wait.' ),
-			'installedMsg'  => __( 'Installation completed successfully.' ),
-			'aysDelete'     => __( 'Are you sure you want to delete this plugin?' ),
-			'deletinggMsg'  => __( 'Deleting... please wait.' ),
-			'deletedMsg'    => __( 'Plugin successfully deleted.' ),
+			'installNow'         => __( 'Install Now' ),
+			'installing'         => __( 'Installing...' ),
+			'installed'          => __( 'Installed!' ),
+			'installFailedShort' => __( 'Install Failed!' ),
+			/* translators: Error string for a failed installation. */
+			'installFailed'      => __( 'Installation Failed: %s' ),
+			/* translators: Plugin/Theme name and version */
+			'installingLabel'    => __( 'Installing %s...' ), // no ellipsis
+			/* translators: Plugin/Theme name and version */
+			'installedLabel'     => __( '%s installed!' ),
+			/* translators: Plugin/Theme name and version */
+			'installFailedLabel' => __( '%s installation failed' ),
+			'installingMsg'      => __( 'Installing... please wait.' ),
+			'installedMsg'       => __( 'Installation completed successfully.' ),
+			'aysDelete'          => __( 'Are you sure you want to delete this plugin?' ),
+			'deletinggMsg'       => __( 'Deleting... please wait.' ),
+			'deletedMsg'         => __( 'Plugin successfully deleted.' ),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
@@ -92,6 +107,10 @@ class Shiny_Updates {
 			}
 		}
 		return $themes;
+	}
+
+	function admin_footer() {
+		wp_print_request_filesystem_credentials_modal();
 	}
 
 	function theme_install_templates() {
