@@ -341,7 +341,7 @@ window.wp = window.wp || {};
 			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		};
 
-		return wp.ajax.post( 'install-theme', data )
+		wp.ajax.post( 'install-theme', data )
 			.done( wp.updates.installThemeSuccess )
 			.fail( wp.updates.installThemeError )
 			.always( wp.updates.ajaxAlways );
