@@ -237,17 +237,18 @@ function wp_ajax_install_theme() {
  * @since 4.5.0
  */
 function wp_ajax_update_theme() {
-	$status = array(
-		'update' => 'theme',
-		'slug'   => sanitize_key( $_POST['slug'] ),
+	check_ajax_referer( 'updates' );
+
+	$stylesheet = sanitize_key( $_POST['slug'] );
+	$status     = array(
+		'update'     => 'theme',
+		'slug'       => $stylesheet,
 	);
 
 	if ( ! current_user_can( 'update_themes' ) ) {
 		$status['error'] = __( 'You do not have sufficient permissions to update themes on this site.' );
 		wp_send_json_error( $status );
 	}
-
-	check_ajax_referer( 'updates' );
 
 	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
 
@@ -257,18 +258,39 @@ function wp_ajax_update_theme() {
 	}
 
 	$upgrader = new Theme_Upgrader( new Automatic_Upgrader_Skin() );
-	$result   = $upgrader->bulk_upgrade( array( $status['slug'] ) );
+	$result   = $upgrader->bulk_upgrade( array( $stylesheet ) );
 
-	if ( is_array( $result ) ) {
-		$result = $result[ $status['slug'] ];
-	}
+	if ( is_array( $result ) && ! empty( $result[ $stylesheet ] ) ) {
 
-	if ( is_wp_error( $result ) ) {
+		// Theme is already at the latest version.
+		if ( true === $result[ $stylesheet ] ) {
+			$status['error'] = $upgrader->strings['up_to_date'];
+			wp_send_json_error( $status );
+		}
+
+		wp_send_json_success( $status );
+
+	} else if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
+		wp_send_json_error( $status );
+
+	} else if ( is_bool( $result ) && ! $result ) {
+		global $wp_filesystem;
+
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
+
 		wp_send_json_error( $status );
 	}
 
-	wp_send_json_success( $status );
+	// An unhandled error occurred.
+	$status['error'] = __( 'Update failed.' );
+	wp_send_json_error( $status );
 }
 
 /**
@@ -277,6 +299,8 @@ function wp_ajax_update_theme() {
  * @since 4.5.0
  */
 function wp_ajax_delete_plugin() {
+	check_ajax_referer( 'updates' );
+
 	$plugin      = urldecode( $_POST['plugin'] );
 	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
 
@@ -287,7 +311,7 @@ function wp_ajax_delete_plugin() {
 		'plugin' => $plugin,
 	);
 
-	if ( ! current_user_can('delete_plugins') ) {
+	if ( ! current_user_can( 'delete_plugins' ) ) {
 		$status['error'] = __( 'You do not have sufficient permissions to delete plugins for this site.' );
 		wp_send_json_error( $status );
 	}
@@ -297,8 +321,6 @@ function wp_ajax_delete_plugin() {
 		wp_send_json_error( $status );
 	}
 
-	check_ajax_referer( 'updates' );
-
 	$delete_result = delete_plugins( array( $plugin ) );
 
 	if ( is_wp_error( $delete_result ) ) {
@@ -306,8 +328,16 @@ function wp_ajax_delete_plugin() {
 		wp_send_json_error( $status );
 
 	} else if ( is_null( $delete_result ) ) {
+		global $wp_filesystem;
+
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
 		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
+
 		wp_send_json_error( $status );
 
 	} elseif ( false === $delete_result ) {
@@ -325,6 +355,8 @@ function wp_ajax_delete_plugin() {
  * @since 4.5.0
  */
 function wp_ajax_install_plugin() {
+	check_ajax_referer( 'updates' );
+
 	$status = array(
 		'install' => 'plugin',
 		'slug'    => sanitize_key( $_POST['slug'] ),
@@ -334,8 +366,6 @@ function wp_ajax_install_plugin() {
 		$status['error'] = __( 'You do not have sufficient permissions to install plugins on this site.' );
 		wp_send_json_error( $status );
 	}
-
-	check_ajax_referer( 'updates' );
 
 	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
 	include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
@@ -357,12 +387,18 @@ function wp_ajax_install_plugin() {
 
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
-
 		wp_send_json_error( $status );
 
 	} else if ( is_null( $result ) ) {
+		global $wp_filesystem;
+
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
 		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
 
 		wp_send_json_error( $status );
 	}
