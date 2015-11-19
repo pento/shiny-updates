@@ -243,6 +243,7 @@ function wp_ajax_update_theme() {
 	$status     = array(
 		'update'     => 'theme',
 		'slug'       => $stylesheet,
+		'newVersion' => '',
 	);
 
 	if ( ! current_user_can( 'update_themes' ) ) {
@@ -266,6 +267,11 @@ function wp_ajax_update_theme() {
 		if ( true === $result[ $stylesheet ] ) {
 			$status['error'] = $upgrader->strings['up_to_date'];
 			wp_send_json_error( $status );
+		}
+
+		$theme = wp_get_theme( $stylesheet );
+		if ( $theme->get( 'Version' ) ) {
+			$status['newVersion'] = sprintf( __( 'Version: %s' ), $theme->get( 'Version' ) );
 		}
 
 		wp_send_json_success( $status );

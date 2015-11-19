@@ -274,6 +274,10 @@ window.wp = window.wp || {};
 		$message.text( wp.updates.l10n.updated );
 		$( '#' + response.slug ).find( '.theme-update' ).remove();
 
+		if ( response.newVersion.length ) {
+			$( '.theme-version' ).text( response.newVersion );
+		}
+
 		wp.a11y.speak( wp.updates.l10n.updatedMsg );
 
 		wp.updates.decrementCount( 'theme' );
