@@ -23,6 +23,10 @@
 	content: '\f147';
 }
 
+.plugin-update-tr .update-message.update-error-message:before {
+	content: "\f158";
+}
+
 .theme-install-php .theme .notice-error {
 	display: block;
 	left: 0;
