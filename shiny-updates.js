@@ -35,8 +35,8 @@ window.wp = window.wp || {};
 			$message = $( '#' + plugin.slug ).next().find( '.update-message' ).removeClass( 'updated-message update-error-message' );
 
 			$message.addClass( 'updating-message' );
-			if ( $message.html() !== wp.updates.l10n.updating ) {
-				$message.data( 'originaltext', $message.html() );
+			if ( $message.text() !== wp.updates.l10n.updating ) {
+				$message.data( 'originaltext', $message.text() );
 			}
 
 			$message.text( wp.updates.l10n.updating );
@@ -94,8 +94,8 @@ window.wp = window.wp || {};
 				$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
 				// Update the version number in the row.
-				newText = $pluginRow.find( '.plugin-version-author-uri' ).html().replace( plugin.oldVersion, plugin.newVersion );
-				$pluginRow.find( '.plugin-version-author-uri' ).html( newText );
+				newText = $pluginRow.find( '.plugin-version-author-uri' ).text().replace( plugin.oldVersion, plugin.newVersion );
+				$pluginRow.find( '.plugin-version-author-uri' ).text( newText );
 
 				// Add updated class to update message parent tr.
 				$pluginRow.next().addClass( 'updated' );
@@ -107,7 +107,7 @@ window.wp = window.wp || {};
 
 			} else {
 				errorMessage = wp.updates.l10n.updateFailed.replace( '%s', plugin.error );
-				$message.html( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
+				$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
 			}
 		});
 
@@ -146,7 +146,7 @@ window.wp = window.wp || {};
 				$message = $pluginRow.next().find( '.update-message' );
 			}
 
-			$message.html( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
+			$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
 		});
 
 		wp.a11y.speak( errorMessage, 'assertive' );
@@ -256,7 +256,7 @@ window.wp = window.wp || {};
 
 		$button
 			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $button.data( 'name' ) ) )
-			.html( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
+			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
@@ -528,7 +528,7 @@ window.wp = window.wp || {};
 
 		$button
 			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $card.find( '.theme-name').text() ) )
-			.html( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
+			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
@@ -644,7 +644,7 @@ window.wp = window.wp || {};
 					var $message = $( '.install-now.updating-message' );
 
 					$message.removeClass( 'updating-message' );
-					$message.html( wp.updates.l10n.installNow );
+					$message.text( wp.updates.l10n.installNow );
 					wp.a11y.speak( wp.updates.l10n.updateCancel );
 				} );
 			}
@@ -711,7 +711,7 @@ window.wp = window.wp || {};
 			}
 
 			$message.removeClass( 'updating-message' );
-			$message.html( $message.data( 'originaltext' ) );
+			$message.text( $message.data( 'originaltext' ) );
 			wp.a11y.speak( wp.updates.l10n.updateCancel );
 		} );
 
