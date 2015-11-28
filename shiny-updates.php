@@ -24,6 +24,9 @@ class Shiny_Updates {
 		// Bulk plugin updates.
 		add_action( 'wp_ajax_bulk-update-plugins', 'wp_ajax_bulk_update_plugins' );
 
+		// Search plugins
+		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
+
 		// Plugin deletions.
 		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
 		add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
@@ -496,6 +499,38 @@ function wp_ajax_install_plugin() {
 
 		wp_send_json_error( $status );
 	}
+
+	wp_send_json_success( $status );
+}
+
+
+/**
+ * Ajax handler for searching plugins.
+ *
+ * @since 4.5.0
+ *
+ * @global WP_List_Table $wp_list_table
+ * @global string        $hook_suffix
+ */
+function wp_ajax_search_plugins() {
+	check_ajax_referer( 'updates' );
+
+	global $wp_list_table, $hook_suffix;
+	$hook_suffix = 'plugins.php';
+
+	$status        = array();
+	$wp_list_table = _get_list_table( 'WP_Plugins_List_Table' );
+
+	if ( ! $wp_list_table->ajax_user_can() ) {
+		$status['error'] = __( 'You do not have sufficient permissions to manage plugins on this site.' );
+		wp_send_json_error( $status );
+	}
+
+	$wp_list_table->prepare_items();
+
+	ob_start();
+	$wp_list_table->display_rows_or_placeholder();
+	$status['items'] = ob_get_clean();
 
 	wp_send_json_success( $status );
 }

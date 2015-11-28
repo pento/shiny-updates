@@ -738,6 +738,18 @@ window.wp = window.wp || {};
 				$el.append( $button );
 			});
 		} );
+
+		$( '#plugin-search-input' ).keyup( function() {
+			var val  = $( this ).val(),
+				data = {
+					'_ajax_nonce': wp.updates.ajaxNonce,
+					's':           val
+				};
+
+			wp.ajax.post( 'search-plugins', data ).done( function( response ) {
+				$( '#the-list' ).empty().append( response.items );
+			});
+		} )
 	});
 
 })( jQuery, window.wp );
