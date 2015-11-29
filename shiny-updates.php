@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Plugin Name: Shiny Updates
  * Description: Hide the ugly parts of updating WordPress.
@@ -9,15 +8,23 @@
  */
 
 class Shiny_Updates {
+
+	/**
+	 * @return Shiny_Updates
+	 */
 	static function init() {
 		static $instance;
 
-		if ( empty( $instance ) )
+		if ( empty( $instance ) ) {
 			$instance = new Shiny_Updates();
+		}
 
 		return $instance;
 	}
 
+	/**
+	 * Constructor.
+	 */
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
@@ -41,8 +48,26 @@ class Shiny_Updates {
 		// Install Themes.
 		add_action( 'admin_footer_theme-install.php', array( $this, 'admin_footer' ) );
 		add_action( 'wp_ajax_update-theme', 'wp_ajax_update_theme' );
+
+		// Auto Updates.
+		add_action( 'admin_init', array( $this, 'load_auto_updates_settings' ) );
+
+		if ( get_option( 'wp_auto_update_core' ) ) {
+			add_filter( 'allow_major_auto_core_updates', '__return_true' );
+		}
+		if ( get_option( 'wp_auto_update_plugins' ) ) {
+			add_filter( 'auto_update_plugin', '__return_true' );
+		}
+		if ( get_option( 'wp_auto_update_themes' ) ) {
+			add_filter( 'auto_update_theme', '__return_true' );
+		}
 	}
 
+	/**
+	 * Enqueue scripts.
+	 *
+	 * @param string $hook Current admin page.
+	 */
 	function enqueue_scripts( $hook ) {
 		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ) ) ) {
 			return;
@@ -115,10 +140,18 @@ class Shiny_Updates {
 		return $themes;
 	}
 
+	/**
+	 * Prints filesystem credential modal if needed.
+	 *
+	 * Needs to be added to `themes.php`.
+	 */
 	function admin_footer() {
 		wp_print_request_filesystem_credentials_modal();
 	}
 
+	/**
+	 * Templates here can replace core templates.
+	 */
 	function theme_install_templates() {
 		?>
 		<script id="tmpl-theme" type="text/template">
@@ -188,6 +221,13 @@ class Shiny_Updates {
 			</div>
 		</script>
 <?php
+	}
+
+	/**
+	 * Loads auto updates settings for `update-core.php`.
+	 */
+	public function load_auto_updates_settings() {
+		include_once plugin_dir_path( __FILE__ ) . 'auto-updates.php';
 	}
 }
 add_action( 'init', array( 'Shiny_Updates', 'init' ) );
