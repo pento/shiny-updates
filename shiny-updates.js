@@ -739,15 +739,21 @@ window.wp = window.wp || {};
 			});
 		} );
 
-		$( '#plugin-search-input' ).keyup( function() {
+		$( '#plugin-search-input' ).on( 'keyup search', function() {
 			var val  = $( this ).val(),
 				data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           val
-				};
+				},
+				jqxhr;
 
-			wp.ajax.post( 'search-plugins', data ).done( function( response ) {
+			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
+				wp.updates.searchRequest.abort();
+			}
+
+			wp.updates.searchRequest = wp.ajax.post( 'search-plugins', data ).done( function( response ) {
 				$( '#the-list' ).empty().append( response.items );
+				delete wp.updates.searchRequest;
 			});
 		} )
 	});
