@@ -1,8 +1,8 @@
 === Shiny Updates ===
 Contributors: pento
-Requires at least: 4.0
-Tested up to: 4.0
-Stable tag: 0.1
+Requires at least: 4.2
+Tested up to: 4.5
+Stable tag: 2
 License: GPL2
 
 Hide the ugly parts of updating WordPress.
