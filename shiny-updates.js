@@ -834,14 +834,29 @@ window.wp = window.wp || {};
 			var plugins = [];
 			event.preventDefault();
 
-			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function ( index, element ) {
-				var $checkbox = $( element );
+			// Uncheck the bulk checkboxes.
+			$( '.manage-column [type="checkbox"]' ).attr( 'checked', false );
 
-				plugins.push({
-					plugin: $checkbox.val(),
-					slug:   $checkbox.parents( 'tr' ).prop( 'id' )
-				});
+			//Find all the checkboxes which have been checked.
+			$bulkActionForm
+				.find( 'input[name="checked[]"]:checked' )
+				.each( function ( index, element ) {
+					var $checkbox = $( element );
+
+					// Uncheck the box.
+					$checkbox.prop( 'checked', false );
+
+					// Only add updatable plugins to the queue.
+					if ( $checkbox.parents( 'tr' ).hasClass( 'update' ) ) {
+						plugins.push({
+							plugin: $checkbox.val(),
+							slug:   $checkbox.parents( 'tr' ).prop( 'id' )
+						});
+					}
 			});
+
+			wp.updates.bulkUpdatePlugins( plugins );
+		} );
 
 			wp.updates.bulkUpdatePlugins( plugins );
 		} );
