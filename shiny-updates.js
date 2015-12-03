@@ -649,7 +649,7 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.installThemeSuccess = function( response ) {
 		var $card = $( '#' + response.slug ),
-			$message = $( '.theme-install[data-slug="' + response.slug + '"]' );
+			$message = $card.find( '.theme-install' );
 
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message disabled' );
 		$message.text( wp.updates.l10n.installed );

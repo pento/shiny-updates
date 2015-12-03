@@ -48,8 +48,10 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			$( document ).on( 'wp-install-theme-success', function() {
-				_this.model.set({ 'installed': true });
+			$( document ).on( 'wp-install-theme-success', function( event, response ) {
+				if ( _this.model.get( 'id' ) === response.slug ) {
+					_this.model.set({ 'installed': true });
+				}
 			});
 
 			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
