@@ -23,6 +23,175 @@ window.wp = window.wp || {};
 		wp.updates.queueChecker();
 	};
 
+
+	/**
+	 * Send an Ajax request to the server to update a plugin.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @param {string} plugin
+	 * @param {string} slug
+	 */
+	wp.updates.updatePlugin = function( plugin, slug ) {
+		var $message, name,
+			$card = $( '.plugin-card-' + slug );
+
+		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
+			$message = $( 'tr[data-plugin="' + plugin + '"]' ).find( '.update-message' );
+		} else if ( 'plugin-install' === pagenow ) {
+			$message = $card.find( '.update-now' );
+			name = $message.data( 'name' );
+			$message.attr( 'aria-label', wp.updates.l10n.updatingLabel.replace( '%s', name ) );
+			// Remove previous error messages, if any.
+			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
+		}
+
+		$message.addClass( 'updating-message' );
+		if ( $message.html() !== wp.updates.l10n.updating ){
+			$message.data( 'originaltext', $message.html() );
+		}
+
+		$message.text( wp.updates.l10n.updating );
+		wp.a11y.speak( wp.updates.l10n.updatingMsg );
+
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'update-plugin',
+				data: {
+					plugin: plugin,
+					slug: slug
+				}
+			} );
+			return;
+		}
+
+		wp.updates.updateLock = true;
+
+		var data = {
+			_ajax_nonce:     wp.updates.ajaxNonce,
+			plugin:          plugin,
+			slug:            slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
+		};
+
+		wp.ajax.post( 'update-plugin', data )
+			.done( wp.updates.updateSuccess )
+			.fail( wp.updates.updateError );
+	};
+
+	/**
+	 * On a successful plugin update, update the UI with the result.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.updateSuccess = function( response ) {
+		var $updateMessage, name, $pluginRow, newText;
+		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
+			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first();
+			$updateMessage = $pluginRow.find( '.update-message' );
+			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
+
+			// Update the version number in the row.
+			newText = $pluginRow.find('.plugin-version-author-uri').html().replace( response.oldVersion, response.newVersion );
+			$pluginRow.find('.plugin-version-author-uri').html( newText );
+
+			// Add updated class to update message parent tr
+			$pluginRow.next().addClass( 'updated' );
+		} else if ( 'plugin-install' === pagenow ) {
+			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' );
+			$updateMessage.addClass( 'button-disabled' );
+			name = $updateMessage.data( 'name' );
+			$updateMessage.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', name ) );
+		}
+
+		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' );
+		$updateMessage.text( wp.updates.l10n.updated );
+		wp.a11y.speak( wp.updates.l10n.updatedMsg );
+
+		wp.updates.decrementCount( 'plugin' );
+
+		wp.updates.updateDoneSuccessfully = true;
+
+		/*
+		 * The lock can be released since the update was successful,
+		 * and any other updates can commence.
+		 */
+		wp.updates.updateLock = false;
+
+		$(document).trigger( 'wp-plugin-update-success', response );
+
+		wp.updates.queueChecker();
+	};
+
+
+	/**
+	 * On a plugin update error, update the UI appropriately.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.updateError = function( response ) {
+		var $card = $( '.plugin-card-' + response.slug ),
+			$message,
+			$button,
+			name,
+			error_message;
+
+		wp.updates.updateDoneSuccessfully = false;
+
+		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
+			wp.updates.credentialError( response, 'update-plugin' );
+			return;
+		}
+
+		error_message = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+
+		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
+			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
+			$message.html( error_message ).removeClass( 'updating-message' );
+		} else if ( 'plugin-install' === pagenow ) {
+			$button = $card.find( '.update-now' );
+			name = $button.data( 'name' );
+
+			$card
+				.addClass( 'plugin-card-update-failed' )
+				.append( '<div class="notice notice-error is-dismissible"><p>' + error_message + '</p></div>' );
+
+			$button
+				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', name ) )
+				.html( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+
+			$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
+				// Use same delay as the total duration of the notice fadeTo + slideUp animation.
+				setTimeout( function() {
+					$card
+						.removeClass( 'plugin-card-update-failed' )
+						.find( '.column-name a' ).focus();
+				}, 200 );
+			});
+		}
+
+		wp.a11y.speak( error_message, 'assertive' );
+
+		/*
+		 * The lock can be released since this failure was
+		 * after the credentials form.
+		 */
+		wp.updates.updateLock = false;
+
+		$(document).trigger( 'wp-plugin-update-error', response );
+
+		wp.updates.queueChecker();
+	};
+
 	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
 	 *
@@ -32,44 +201,27 @@ window.wp = window.wp || {};
 		var $message, data;
 
 		_.each( plugins, function( plugin ) {
-			$message = $( '#' + plugin.slug ).next().find( '.update-message' ).removeClass( 'updated-message update-error-message' );
+			$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
 
 			$message.addClass( 'updating-message' );
-			if ( $message.text() !== wp.updates.l10n.updating ) {
-				$message.data( 'originaltext', $message.text() );
+			if ( $message.html() !== wp.updates.l10n.updating ) {
+				$message.data( 'originaltext', $message.html() );
 			}
 
 			$message.text( wp.updates.l10n.updating );
+			wp.updates.updateQueue.push( {
+				type: 'bulk-update-plugin',
+				data: plugin
+			} );
 		});
 
 		wp.a11y.speak( wp.updates.l10n.updatingMsg );
 
-		if ( wp.updates.updateLock ) {
-			wp.updates.updateQueue.push( {
-				type: 'bulk-update-plugins',
-				data: plugins
-			} );
-			return;
-		}
+		wp.updates.updateLock = false;
+		wp.updates.queueChecker();
 
-		wp.updates.updateLock = true;
-
-		data = {
-			_ajax_nonce:     wp.updates.ajaxNonce,
-			plugins:         plugins,
-			username:        wp.updates.filesystemCredentials.ftp.username,
-			password:        wp.updates.filesystemCredentials.ftp.password,
-			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
-			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
-			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
-			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
-		};
-
-		wp.ajax.post( 'bulk-update-plugins', data )
-			.done( wp.updates.bulkUpdatePluginsSuccess )
-			.fail( wp.updates.bulkUpdatePluginsError )
-			.always( wp.updates.ajaxAlways );
 	};
+
 
 	/**
 	 * On bulk plugin update success, update the UI with the result.
@@ -131,7 +283,7 @@ window.wp = window.wp || {};
 		wp.updates.updateDoneSuccessfully = false;
 
 		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
-			wp.updates.credentialError( response, 'bulk-update-plugins' );
+			wp.updates.credentialError( response, 'bulk-update-plugin' );
 			return;
 		}
 
@@ -169,9 +321,9 @@ window.wp = window.wp || {};
 		$message.addClass( 'updating-message' );
 		$message.text( wp.updates.l10n.installing );
 		wp.a11y.speak( wp.updates.l10n.installingMsg );
-		
+
 		// Remove previous error messages, if any.
-		$card.removeClass( 'plugin-card-install-failed' ).find( '.notice.notice-error' ).remove(); 
+		$card.removeClass( 'plugin-card-install-failed' ).find( '.notice.notice-error' ).remove();
 
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
@@ -239,7 +391,7 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error );	
+		errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error );
 
 		$card
 			.addClass( 'plugin-card-update-failed' )
@@ -358,7 +510,7 @@ window.wp = window.wp || {};
 		wp.a11y.speak( wp.updates.l10n.updatingMsg );
 
 		// Remove previous error messages, if any.
-		$( '#' + slug ).removeClass( 'theme-update-failed' ).find( '.notice.notice-error' ).remove(); 
+		$( '#' + slug ).removeClass( 'theme-update-failed' ).find( '.notice.notice-error' ).remove();
 
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
@@ -424,7 +576,7 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.updateThemeError = function( response ) {
 		var $message = $( '.theme-info .notice' ),
-			errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );	
+			errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
 
 		$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
 		$message.text( errorMessage );
@@ -447,9 +599,9 @@ window.wp = window.wp || {};
 		$message.addClass( 'updating-message' );
 		$message.text( wp.updates.l10n.installing );
 		wp.a11y.speak( wp.updates.l10n.installingMsg );
-		
+
 		// Remove previous error messages, if any.
-		$( '.install-theme-info, #' + slug ).removeClass( 'theme-install-failed' ).find( '.notice.notice-error' ).remove(); 
+		$( '.install-theme-info, #' + slug ).removeClass( 'theme-install-failed' ).find( '.notice.notice-error' ).remove();
 
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
@@ -553,12 +705,9 @@ window.wp = window.wp || {};
 				wp.updates.installPlugin( job.data.slug );
 				break;
 
+			case 'bulk-update-plugin':
 			case 'update-plugin':
 				wp.updates.updatePlugin( job.data.plugin, job.data.slug );
-				break;
-
-			case 'bulk-update-plugin':
-				wp.updates.bulkUpdatePlugins( job.data.plugins );
 				break;
 
 			case 'delete-plugin':
