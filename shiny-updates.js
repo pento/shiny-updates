@@ -23,6 +23,7 @@ window.wp = window.wp || {};
 		wp.updates.queueChecker();
 	};
 
+
 	/**
 	 * Send an Ajax request to the server to update a plugin.
 	 *
@@ -219,6 +220,90 @@ window.wp = window.wp || {};
 		wp.updates.updateLock = false;
 		wp.updates.queueChecker();
 
+	};
+
+
+	/**
+	 * On bulk plugin update success, update the UI with the result.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.bulkUpdatePluginsSuccess = function( response ) {
+		var $message, $pluginRow, newText, errorMessage;
+
+		_.each( response.plugins, function( plugin ) {
+			$pluginRow = $( '#' + plugin.slug );
+			$message   = $pluginRow.next().find( '.update-message' );
+
+			if ( ! $message.length ) {
+				$pluginRow.addClass( 'update' ).after( '<tr class="plugin-update-tr"><td colspan="3" class="plugin-update colspanchange"><div class="update-message"></div></td></tr>' );
+				$message = $pluginRow.next().find( '.update-message' );
+			}
+
+			if ( 'undefined' === typeof plugin.error ) {
+				$pluginRow.addClass( 'updated' ).removeClass( 'update' );
+
+				// Update the version number in the row.
+				newText = $pluginRow.find( '.plugin-version-author-uri' ).text().replace( plugin.oldVersion, plugin.newVersion );
+				$pluginRow.find( '.plugin-version-author-uri' ).text( newText );
+
+				// Add updated class to update message parent tr.
+				$pluginRow.next().addClass( 'updated' );
+
+				$message.removeClass( 'updating-message' ).addClass( 'updated-message' );
+				$message.text( wp.updates.l10n.updated );
+
+				wp.updates.decrementCount( 'plugin' );
+
+			} else {
+				errorMessage = wp.updates.l10n.updateFailed.replace( '%s', plugin.error );
+				$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
+			}
+		});
+
+		wp.a11y.speak( wp.updates.l10n.updatedMsg );
+
+		wp.updates.updateDoneSuccessfully = true;
+
+		$document.trigger( 'wp-bulk-plugin-update-success', response );
+	};
+
+	/**
+	 * On bulk plugin update failure, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.bulkUpdatePluginsError = function( response ) {
+		var $pluginRow, $message, errorMessage;
+
+		wp.updates.updateDoneSuccessfully = false;
+
+		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
+			wp.updates.credentialError( response, 'bulk-update-plugin' );
+			return;
+		}
+
+		errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+
+		_.each( response.plugins, function( plugin ) {
+			$pluginRow = $( '#' + plugin.slug );
+			$message   = $pluginRow.next().find( '.update-message' );
+
+			if ( ! $message.length ) {
+				$pluginRow.addClass( 'update' ).after( '<tr class="plugin-update-tr"><td colspan="3" class="plugin-update colspanchange"><div class="update-message"></div></td></tr>' );
+				$message = $pluginRow.next().find( '.update-message' );
+			}
+
+			$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
+		});
+
+		wp.a11y.speak( errorMessage, 'assertive' );
+
+		$document.trigger( 'wp-bulk-plugin-update-error', response );
 	};
 
 	/**
@@ -620,12 +705,9 @@ window.wp = window.wp || {};
 				wp.updates.installPlugin( job.data.slug );
 				break;
 
+			case 'bulk-update-plugin':
 			case 'update-plugin':
 				wp.updates.updatePlugin( job.data.plugin, job.data.slug );
-				break;
-
-			case 'bulk-update-plugin':
-				wp.updates.bulkUpdatePlugins( job.data.plugins );
 				break;
 
 			case 'delete-plugin':
@@ -752,25 +834,13 @@ window.wp = window.wp || {};
 			var plugins = [];
 			event.preventDefault();
 
-			// Uncheck the bulk checkboxes.
-			$( '.manage-column [type="checkbox"]' ).attr( 'checked', false );
+			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function ( index, element ) {
+				var $checkbox = $( element );
 
-			//Find all the checkboxes which have been checked.
-			$bulkActionForm
-				.find( 'input[name="checked[]"]:checked' )
-				.each( function ( index, element ) {
-					var $checkbox = $( element );
-
-					// Uncheck the box.
-					$checkbox.prop( 'checked', false );
-
-					// Only add updatable plugins to the queue.
-					if ( $checkbox.parents( 'tr' ).hasClass( 'update' ) ) {
-						plugins.push({
-							plugin: $checkbox.val(),
-							slug:   $checkbox.parents( 'tr' ).prop( 'id' )
-						});
-					}
+				plugins.push({
+					plugin: $checkbox.val(),
+					slug:   $checkbox.parents( 'tr' ).prop( 'id' )
+				});
 			});
 
 			wp.updates.bulkUpdatePlugins( plugins );
