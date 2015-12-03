@@ -858,9 +858,6 @@ window.wp = window.wp || {};
 			wp.updates.bulkUpdatePlugins( plugins );
 		} );
 
-			wp.updates.bulkUpdatePlugins( plugins );
-		} );
-
 		/**
 		 * Handle events after the credential modal was closed.
 		 */
