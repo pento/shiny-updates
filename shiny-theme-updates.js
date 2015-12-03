@@ -45,7 +45,7 @@ window.wp = window.wp || {};
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials();
+				wp.updates.requestFilesystemCredentials( event );
 			}
 
 			$( document ).on( 'wp-install-theme-success', function() {
@@ -69,7 +69,7 @@ window.wp = window.wp || {};
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials();
+				wp.updates.requestFilesystemCredentials( event );
 			}
 
 			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
@@ -98,7 +98,7 @@ window.wp = window.wp || {};
 			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials();
+				wp.updates.requestFilesystemCredentials( event );
 			}
 
 			$( document ).on( 'wp-install-theme-success', function() {
