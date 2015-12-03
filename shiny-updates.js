@@ -507,6 +507,10 @@ window.wp = window.wp || {};
 			data;
 
 		$message.addClass( 'updating-message' );
+		if ( $message.html() !== wp.updates.l10n.updating ){
+			$message.data( 'originaltext', $message.html() );
+		}
+
 		$message.text( wp.updates.l10n.updating );
 		wp.a11y.speak( wp.updates.l10n.updatingMsg );
 
@@ -598,6 +602,10 @@ window.wp = window.wp || {};
 			data;
 
 		$message.addClass( 'updating-message' );
+		if ( $message.html() !== wp.updates.l10n.installing ){
+			$message.data( 'originaltext', $message.html() );
+		}
+
 		$message.text( wp.updates.l10n.installing );
 		wp.a11y.speak( wp.updates.l10n.installingMsg );
 
@@ -663,24 +671,19 @@ window.wp = window.wp || {};
 			errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error );
 
 		if ( $document.find( 'body' ).hasClass( 'full-overlay-active' ) ) {
-			$button = $( '.theme-install[data-slug="' + response.slug + '"]' ),
+			$button = $( '.theme-install[data-slug="' + response.slug + '"]' );
 			$card   = $( '.install-theme-info' );
-
-			$card
-				.addClass( 'theme-install-failed' )
-				.prepend( '<div class="notice notice-error"><p>' + errorMessage + '</p></div>' );
-
 		} else {
 			$card   = $( '#' + response.slug );
 			$button = $card.find( '.theme-install' );
-
-			$card
-				.addClass( 'theme-install-failed' )
-				.append( '<div class="notice notice-error"><p>' + errorMessage + '</p></div>' );
 		}
 
+		$card
+			.addClass( 'theme-install-failed' )
+			.append( '<div class="notice notice-error"><p>' + errorMessage + '</p></div>' );
+
 		$button
-			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $card.find( '.theme-name').text() ) )
+			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $card.find( '.theme-name' ).text() ) )
 			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
@@ -870,10 +873,12 @@ window.wp = window.wp || {};
 				$message = $( '#' + slug ).next().find( '.update-message' );
 			} else if ( 'plugin-install' === pagenow ) {
 				$message = $( '.update-now.updating-message' );
+			} else {
+				$message = $( '.updating-message' );
 			}
 
 			$message.removeClass( 'updating-message' );
-			$message.text( $message.data( 'originaltext' ) );
+			$message.html( $message.data( 'originaltext' ) );
 			wp.a11y.speak( wp.updates.l10n.updateCancel );
 		} );
 
