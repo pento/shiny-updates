@@ -94,16 +94,17 @@ window.wp = window.wp || {};
 	wp.updates.updateSuccess = function( response ) {
 		var $updateMessage, name, $pluginRow, newText;
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first();
-			$updateMessage = $pluginRow.find( '.update-message' );
+			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first().prev();
+			$updateMessage = $pluginRow.next().find( '.update-message' );
 			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
 			// Update the version number in the row.
 			newText = $pluginRow.find('.plugin-version-author-uri').html().replace( response.oldVersion, response.newVersion );
 			$pluginRow.find('.plugin-version-author-uri').html( newText );
 
-			// Add updated class to update message parent tr
-			$pluginRow.next().addClass( 'updated' );
+			// Add updated class to update message plugin row.
+			$pluginRow.addClass( 'updated' );
+
 		} else if ( 'plugin-install' === pagenow ) {
 			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' );
 			$updateMessage.addClass( 'button-disabled' );
@@ -201,7 +202,7 @@ window.wp = window.wp || {};
 		var $message, data;
 
 		_.each( plugins, function( plugin ) {
-			$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
+			$message = $( 'tr[data-plugin="' + plugin.plugin + '"]' ).find( '.update-message' );
 
 			$message.addClass( 'updating-message' );
 			if ( $message.html() !== wp.updates.l10n.updating ) {
