@@ -194,6 +194,26 @@ window.wp = window.wp || {};
 	};
 
 	/**
+	 * Append a progress indicator below the passed element.
+	 *
+	 * @param {jQuery element} elementToAttachTo jQuery element to attach the progress indicator to.
+	 */
+	wp.updates.addProgress = function( elementToInsertAfter ) {
+		if ( ! ( elementToInsertAfter instanceof jQuery ) ) {
+			return;
+		}
+
+		/**
+		 * Grab the notifcation template and insert it after the passed element.
+		 */
+		$progressTemplate = $( '#wp-progress-template' );
+		if ( 0 !== $progressTemplate.length ) {
+			elementToInsertAfter.after( $progressTemplate );
+		}
+
+	}
+
+	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
 	 *
 	 * @since 4.5.0
