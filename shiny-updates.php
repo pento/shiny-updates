@@ -92,7 +92,7 @@ class Shiny_Updates {
 			'installed'          => __( 'Installed!' ),
 			'installFailedShort' => __( 'Install Failed!' ),
 			/* translators: Error string for a failed installation. */
-			'installFailed'      => __( 'Installation Failed: %s' ),
+			'installFailed'      => __( 'Installation failed: %s' ),
 			/* translators: Plugin/Theme name and version */
 			'installingLabel'    => __( 'Installing %s...' ), // no ellipsis
 			/* translators: Plugin/Theme name and version */
@@ -364,6 +364,19 @@ function wp_ajax_install_theme() {
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
+
+	} else if ( is_null( $result ) ) {
+		global $wp_filesystem;
+
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
+
+		wp_send_json_error( $status );
 	}
 
 	// Never switch to theme (unlike plugin activation).
@@ -428,7 +441,7 @@ function wp_ajax_update_theme() {
 		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
 			$status['error'] = $wp_filesystem->errors->get_error_message();
 		}
 
