@@ -33,26 +33,31 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.updatePlugin = function( plugin, slug ) {
-		var $message, name,
+		var $message, name, $updateRow, message,
 			$card = $( '.plugin-card-' + slug );
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-			$message = $( 'tr[data-plugin="' + plugin + '"]' ).find( '.update-message' );
+			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
+			$message   = $updateRow.find( '.update-message' );
+			name       = $updateRow.data( 'name' );
+
 		} else if ( 'plugin-install' === pagenow ) {
 			$message = $card.find( '.update-now' );
 			name = $message.data( 'name' );
-			$message.attr( 'aria-label', wp.updates.l10n.updatingLabel.replace( '%s', name ) );
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
+
+		message = wp.updates.l10n.updatingLabel.replace( '%s', name );
+		$message.attr( 'aria-label', message );
 
 		$message.addClass( 'updating-message' );
 		if ( $message.html() !== wp.updates.l10n.updating ){
 			$message.data( 'originaltext', $message.html() );
 		}
 
+		wp.updates.updateProgressMessage( message );
 		$message.text( wp.updates.l10n.updating );
-		wp.a11y.speak( wp.updates.l10n.updatingMsg );
 
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
@@ -114,7 +119,7 @@ window.wp = window.wp || {};
 
 		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' );
 		$updateMessage.text( wp.updates.l10n.updated );
-		wp.a11y.speak( wp.updates.l10n.updatedMsg );
+		wp.updates.updateProgressMessage( wp.updates.l10n.updatedMsg );
 
 		wp.updates.decrementCount( 'plugin' );
 
@@ -180,7 +185,7 @@ window.wp = window.wp || {};
 			});
 		}
 
-		wp.a11y.speak( error_message, 'assertive' );
+		wp.updates.updateProgressMessage( error_message, true );
 
 		/*
 		 * The lock can be released since this failure was
@@ -194,23 +199,46 @@ window.wp = window.wp || {};
 	};
 
 	/**
-	 * Append a progress indicator below the passed element.
-	 *
-	 * @param {jQuery element} elementToAttachTo jQuery element to attach the progress indicator to.
+	 * Set up the progress indicator.
 	 */
-	wp.updates.addProgress = function( elementToInsertAfter ) {
-		if ( ! ( elementToInsertAfter instanceof jQuery ) ) {
+	wp.updates.setupProgressIndicator = function() {
+		/**
+		 * Only set uo the progress updater once.
+		 */
+		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
 			return;
 		}
 
 		/**
-		 * Grab the notifcation template and insert it after the passed element.
+		 * Set up the notifcation template.
 		 */
-		$progressTemplate = $( '#wp-progress-template' );
+		$progressTemplate = $( '#tmpl-wp-progress-template' );
 		if ( 0 !== $progressTemplate.length ) {
-			elementToInsertAfter.after( $progressTemplate );
+			wp.updates.progressTemplate = wp.template( 'wp-progress-template' );
+			wp.updates.progressUpdates  = $( '#wp-progress-placeholder' );
 		}
 
+	}
+
+	/**
+	 * Update the progress indicator with a new message.
+	 *
+	 * @param {String}  message A string to display in the prigress indicator.
+	 * @param {boolean} isError Whether the message indicates an error.
+	 */
+	wp.updates.updateProgressMessage = function( message, isError ) {
+		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
+			//
+			wp.updates.progressUpdates.html(
+				wp.updates.progressTemplate(
+					{
+						message: message,
+						noticeClass: isError ? 'notice-error' : 'notice-success'
+					}
+				)
+			);
+			wp.a11y.speak( wp.updates.l10n.updatingMsg, isError ? 'assertive' : '' );
+		}
 	}
 
 	/**
@@ -220,6 +248,9 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
 		var $message, data;
+
+		// Set up the progress indicaator.
+		wp.updates.setupProgressIndicator();
 
 		_.each( plugins, function( plugin ) {
 			$message = $( 'tr[data-plugin="' + plugin.plugin + '"]' ).find( '.update-message' );
@@ -237,94 +268,11 @@ window.wp = window.wp || {};
 		});
 
 		wp.a11y.speak( wp.updates.l10n.updatingMsg );
+		wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
 
 		wp.updates.updateLock = false;
 		wp.updates.queueChecker();
 
-	};
-
-
-	/**
-	 * On bulk plugin update success, update the UI with the result.
-	 *
-	 * @since 4.5.0
-	 *
-	 * @param {object} response
-	 */
-	wp.updates.bulkUpdatePluginsSuccess = function( response ) {
-		var $message, $pluginRow, newText, errorMessage;
-
-		_.each( response.plugins, function( plugin ) {
-			$pluginRow = $( '#' + plugin.slug );
-			$message   = $pluginRow.next().find( '.update-message' );
-
-			if ( ! $message.length ) {
-				$pluginRow.addClass( 'update' ).after( '<tr class="plugin-update-tr"><td colspan="3" class="plugin-update colspanchange"><div class="update-message"></div></td></tr>' );
-				$message = $pluginRow.next().find( '.update-message' );
-			}
-
-			if ( 'undefined' === typeof plugin.error ) {
-				$pluginRow.addClass( 'updated' ).removeClass( 'update' );
-
-				// Update the version number in the row.
-				newText = $pluginRow.find( '.plugin-version-author-uri' ).text().replace( plugin.oldVersion, plugin.newVersion );
-				$pluginRow.find( '.plugin-version-author-uri' ).text( newText );
-
-				// Add updated class to update message parent tr.
-				$pluginRow.next().addClass( 'updated' );
-
-				$message.removeClass( 'updating-message' ).addClass( 'updated-message' );
-				$message.text( wp.updates.l10n.updated );
-
-				wp.updates.decrementCount( 'plugin' );
-
-			} else {
-				errorMessage = wp.updates.l10n.updateFailed.replace( '%s', plugin.error );
-				$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
-			}
-		});
-
-		wp.a11y.speak( wp.updates.l10n.updatedMsg );
-
-		wp.updates.updateDoneSuccessfully = true;
-
-		$document.trigger( 'wp-bulk-plugin-update-success', response );
-	};
-
-	/**
-	 * On bulk plugin update failure, update the UI appropriately.
-	 *
-	 * @since 4.5.0
-	 *
-	 * @param {object} response
-	 */
-	wp.updates.bulkUpdatePluginsError = function( response ) {
-		var $pluginRow, $message, errorMessage;
-
-		wp.updates.updateDoneSuccessfully = false;
-
-		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
-			wp.updates.credentialError( response, 'bulk-update-plugin' );
-			return;
-		}
-
-		errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
-
-		_.each( response.plugins, function( plugin ) {
-			$pluginRow = $( '#' + plugin.slug );
-			$message   = $pluginRow.next().find( '.update-message' );
-
-			if ( ! $message.length ) {
-				$pluginRow.addClass( 'update' ).after( '<tr class="plugin-update-tr"><td colspan="3" class="plugin-update colspanchange"><div class="update-message"></div></td></tr>' );
-				$message = $pluginRow.next().find( '.update-message' );
-			}
-
-			$message.text( errorMessage ).removeClass( 'updating-message' ).addClass( 'update-error-message' );
-		});
-
-		wp.a11y.speak( errorMessage, 'assertive' );
-
-		$document.trigger( 'wp-bulk-plugin-update-error', response );
 	};
 
 	/**
@@ -878,8 +826,9 @@ window.wp = window.wp || {};
 						});
 					}
 			});
-
-			wp.updates.bulkUpdatePlugins( plugins );
+			if ( 0 !== plugins.length ) {
+				wp.updates.bulkUpdatePlugins( plugins );
+			}
 		} );
 
 		/**
