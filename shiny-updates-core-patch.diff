@@ -1,0 +1,10 @@
+Index: src/wp-admin/includes/update.php
+===================================================================
+--- src/wp-admin/includes/update.php	(revision 35756)
++++ src/wp-admin/includes/update.php	(working copy)
+@@ -335,10 +335,10 @@
+ 			$active_class = is_plugin_active( $file ) ? ' active' : '';
+ 		}
+
+-		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message">';
++		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '" data-name="' . esc_attr( $plugin_name ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message">';
