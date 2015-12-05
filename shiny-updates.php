@@ -69,8 +69,19 @@ class Shiny_Updates {
 	/**
 	 * Add the HTML template for progress updates.
 	 */
-		echo '<div id="wp-progress-template" class="notice wp-progress-update hidden">{{ message }}</div>';
 	function wp_update_notification_template() {
+		?>
+		<div id="wp-progress-placeholder"></div>
+		<script id="tmpl-wp-progress-template" type="text/html">
+			<div class="notice wp-progress-update <# if ( data.noticeClass ) { #> {{ data.noticeClass }} <# } #>">
+				<p>
+					<# if ( data.message ) { #>
+						{{ data.message }}
+					<# } #>
+				</p>
+			</div>
+		</script>
+		<?php
 	}
 
 	/**
@@ -129,7 +140,10 @@ class Shiny_Updates {
 			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
 			$actions['delete'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=delete-selected&amp;checked[]=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'bulk-plugins' ) . '" class="delete" aria-label="' . esc_attr( sprintf( __( 'Delete %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Delete' ) . '</a>';
 		}
-
+		if ( ! empty( $actions['update'] ) ) {
+			error_log( $actions['update']);
+		}
+		error_log(json_encode($actions));
 		return $actions;
 	}
 
@@ -276,7 +290,6 @@ function wp_ajax_bulk_update_plugins() {
 
 	if ( ! current_user_can( 'update_plugins' ) ) {
 		$status['error'] = __( 'You do not have sufficient permissions to update plugins for this site.' );
-		wp_send_json_error( $status );
 	}
 
 	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
