@@ -116,7 +116,7 @@ class Shiny_Updates {
 			'deletinggMsg'       => __( 'Deleting... please wait.' ),
 			'deletedMsg'         => __( 'Plugin successfully deleted.' ),
 			/* translators: 1. Total plugins to update. 2. Plugins update successes. 3. Plugin update failures. */
-			'updatedPluginsMsg'  => __( 'Total plugins to update: %s. Successes: %s. Failures: %s.' ),
+			'updatedPluginsMsg'  => __( 'Plugin updates complete. Successes: %d. Failures: %d.' ),
 			'updateQueued'       => __( 'Updated queued.')
 		) );
 
