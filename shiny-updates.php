@@ -115,6 +115,8 @@ class Shiny_Updates {
 			'aysDelete'          => __( 'Are you sure you want to delete this plugin?' ),
 			'deletinggMsg'       => __( 'Deleting... please wait.' ),
 			'deletedMsg'         => __( 'Plugin successfully deleted.' ),
+			/* translators: 1. Total plugins to update. 2. Plugins update successes. 3. Plugin update failures. */
+			'updatedPluginsMsg'  => __( 'Total plugins to update: %s. Successes: %s. Failures: %s.' )
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
