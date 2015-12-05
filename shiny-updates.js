@@ -261,7 +261,6 @@ window.wp = window.wp || {};
 			} );
 		});
 
-		wp.a11y.speak( wp.updates.l10n.updatingMsg );
 		wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
 
 		wp.updates.updateLock = false;
