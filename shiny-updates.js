@@ -660,6 +660,12 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.queueChecker = function() {
 		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
+			// Clear the update lock when the queue is empty
+			if ( wp.updates.updateQueue.length <= 0 ) {
+				wp.updates.updateLock = false;
+				// Update the status with final progress results.
+
+			}
 			return;
 		}
 
