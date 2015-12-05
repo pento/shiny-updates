@@ -187,12 +187,6 @@ window.wp = window.wp || {};
 
 		wp.updates.updateProgressMessage( error_message, true );
 
-		/*
-		 * The lock can be released since this failure was
-		 * after the credentials form.
-		 */
-		wp.updates.updateLock = false;
-
 		$(document).trigger( 'wp-plugin-update-error', response );
 
 		wp.updates.queueChecker();
