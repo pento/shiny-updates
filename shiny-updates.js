@@ -254,7 +254,8 @@ window.wp = window.wp || {};
 				$message.data( 'originaltext', $message.html() );
 			}
 
-			$message.text( wp.updates.l10n.updating );
+			$message.text( wp.updates.l10n.updateQueued );
+
 			wp.updates.updateQueue.push( {
 				type: 'bulk-update-plugin',
 				data: plugin
