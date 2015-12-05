@@ -32,7 +32,7 @@ class Shiny_Updates {
 		add_action( 'wp_ajax_bulk-update-plugins', array( $this, 'wp_ajax_bulk_update_plugins' ) );
 
 		// Add the update HTML for plugin updates progress.
-		add_action( 'pre_current_active_plugins', array( $this, 'wp_install_plugins_update_progress' ) );
+		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
 
 		// Search plugins
 		add_action( 'wp_ajax_search-plugins', array( $this, 'wp_ajax_search_plugins' ) );
@@ -69,8 +69,8 @@ class Shiny_Updates {
 	/**
 	 * Add the HTML template for progress updates.
 	 */
-	function wp_install_plugins_update_progress() {
 		echo '<div id="wp-progress-template" class="notice wp-progress-update hidden">{{ message }}</div>';
+	function wp_update_notification_template() {
 	}
 
 	/**
