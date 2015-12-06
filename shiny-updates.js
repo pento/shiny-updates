@@ -661,17 +661,29 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.queueChecker = function() {
 		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
-			// Clear the update lock when the queue is empty
+			// Clear the update lock when the queue is empty.
 			if ( wp.updates.updateQueue.length <= 0 ) {
 				wp.updates.updateLock = false;
 				// Update the status with final progress results.
-
+				switch ( wp.updates.currentJobType ) {
+					case 'bulk-update-plugin':
+						var updateMessage = wp.updates.l10n.updatedPluginsMsg;
+						if ( 0 !== wp.updates.pluginUpdateSuccesses ) {
+							updateMessage += ' ' + wp.updates.l10n.updatedPluginsSuccessMsg.replace( '%d', wp.updates.pluginUpdateSuccesses );
+						}
+						if ( 0 !== wp.updates.pluginUpdateFailures ) {
+							updateMessage += ' ' + wp.updates.l10n.updatedPluginsFailureMsg.replace( '%d', wp.updates.pluginUpdateFailures );
+						}
+						wp.updates.updateProgressMessage( updateMessage, 'is-dismissible' );
+						break;
+				}
 			}
 			return;
 		}
 
 		var job = wp.updates.updateQueue.shift();
 
+		wp.updates.currentJobType = job.type;
 		switch ( job.type ) {
 			case 'install-plugin':
 				wp.updates.installPlugin( job.data.slug );
