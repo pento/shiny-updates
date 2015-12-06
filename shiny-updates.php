@@ -35,8 +35,14 @@ class Shiny_Updates {
 		add_action( 'wp_ajax_search-plugins', array( $this, 'wp_ajax_search_plugins' ) );
 
 		// Plugin deletions.
-		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
 		add_action( 'wp_ajax_delete-plugin', array( $this, 'wp_ajax_delete_plugin' ) );
+
+		// Plugin activations.
+		add_action( 'wp_ajax_activate-plugin', array( $this, 'wp_ajax_activate_plugin' ) );
+
+		// Plugin row actions.
+		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
+
 
 		// Themes.
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
@@ -262,12 +268,9 @@ class Shiny_Updates {
 add_action( 'init', array( 'Shiny_Updates', 'init' ) );
 
 /**
- * AJAX handler for updating a plugin.
- *
- * @since 4.5.0
- *
- * @see Plugin_Upgrader
+ * AJAX handler for activating a plugin.
  */
+function wp_ajax_activate_plugin() {
 
 }
 
