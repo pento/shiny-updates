@@ -153,9 +153,10 @@ window.wp = window.wp || {};
 			error_message;
 
 		wp.updates.updateDoneSuccessfully = false;
-
+		wp.updates.updateLock             = false;
 		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
 			wp.updates.credentialError( response, 'update-plugin' );
+			wp.updates.queueChecker();
 			return;
 		}
 
@@ -204,6 +205,10 @@ window.wp = window.wp || {};
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
 			return;
 		}
+
+		// Set up the message lock for message queueing.
+		wp.updates.messageLock  = false;
+		wp.updates.messageQueue = [];
 
 		/**
 		 * Set up the notifcation template.
