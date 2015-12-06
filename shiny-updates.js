@@ -220,20 +220,53 @@ window.wp = window.wp || {};
 	 * @param {String}  message A string to display in the prigress indicator.
 	 * @param {boolean} isError Whether the message indicates an error.
 	 */
-	wp.updates.updateProgressMessage = function( message, isError ) {
+	wp.updates.updateProgressMessage = function( message, messageClass ) {
+
+		// Check to ensure progress updater is set up.
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
-			//
-			wp.updates.progressUpdates.html(
-				wp.updates.progressTemplate(
-					{
-						message: message,
-						noticeClass: isError ? 'notice-error' : 'notice-success'
-					}
-				)
-			);
-			wp.a11y.speak( wp.updates.l10n.updatingMsg, isError ? 'assertive' : '' );
+			// Add the message to a queue so we can display messages in a throttled manner.
+			wp.updates.messageQueue.push( { message: message, messageClass: messageClass } );
+			wp.updates.processMessageQueue();
 		}
 	}
+
+	/**
+	 * Process the message queue, showing messages in a throttled manner.
+	 */
+	wp.updates.processMessageQueue = function() {
+		var message;
+
+		// If we are already displaying a message, pause briefly and try again.
+		if ( wp.updates.messageLock ) {
+			setTimeout( wp.updates.processMessageQueue, 500 );
+		} else {
+			// Anything left in the queue?
+			if ( 0 !== wp.updates.messageQueue.length ) {
+				// Lock message displaying until our message displays briefly.
+				wp.updates.messageLock = true;
+
+				queuedMessage = wp.updates.messageQueue.shift();
+
+				// Update the progress message.
+				wp.updates.progressUpdates.html(
+					wp.updates.progressTemplate(
+						{
+							message: queuedMessage.message,
+							noticeClass: _.isUndefined( queuedMessage.messageClass ) ? 'notice-success' : 'notice-error'
+						}
+					)
+				);
+				wp.a11y.speak( wp.updates.l10n.updatingMsg, 'notice-error' === queuedMessage.messageClass ? 'assertive' : '' );
+
+				// After a brief delay, call the queue again.
+				setTimeout( function() {
+					wp.updates.messageLock = false;
+					wp.updates.processMessageQueue();
+				}, 500 );
+			}
+		}
+	}
+
 
 	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
