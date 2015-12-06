@@ -185,7 +185,7 @@ window.wp = window.wp || {};
 			});
 		}
 
-		wp.updates.updateProgressMessage( error_message, true );
+		wp.updates.updateProgressMessage( error_message, 'notice-error' );
 
 		$(document).trigger( 'wp-plugin-update-error', response );
 
