@@ -98,31 +98,31 @@ class Shiny_Updates {
 
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'updates' ), null, true );
 		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
-			'installNow'         => __( 'Install Now' ),
-			'installing'         => __( 'Installing...' ),
-			'installed'          => __( 'Installed!' ),
-			'installFailedShort' => __( 'Install Failed!' ),
+			'installNow'                => __( 'Install Now' ),
+			'installing'                => __( 'Installing...' ),
+			'installed'                 => __( 'Installed!' ),
+			'installFailedShort'        => __( 'Install Failed!' ),
 			/* translators: Error string for a failed installation. */
-			'installFailed'      => __( 'Installation failed: %s' ),
+			'installFailed'             => __( 'Installation failed: %s' ),
 			/* translators: Plugin/Theme name and version */
-			'installingLabel'    => __( 'Installing %s...' ), // no ellipsis
+			'installingLabel'           => __( 'Installing %s...' ), // no ellipsis
 			/* translators: Plugin/Theme name and version */
-			'installedLabel'     => __( '%s installed!' ),
+			'installedLabel'            => __( '%s installed!' ),
 			/* translators: Plugin/Theme name and version */
-			'installFailedLabel' => __( '%s installation failed' ),
-			'installingMsg'      => __( 'Installing... please wait.' ),
-			'installedMsg'       => __( 'Installation completed successfully.' ),
-			'aysDelete'          => __( 'Are you sure you want to delete this plugin?' ),
-			'deletinggMsg'       => __( 'Deleting... please wait.' ),
-			'deletedMsg'         => __( 'Plugin successfully deleted.' ),
-			'updatedPluginsMsg'  => __( 'Plugin updates complete.' ),
+			'installFailedLabel'        => __( '%s installation failed' ),
+			'installingMsg'             => __( 'Installing... please wait.' ),
+			'installedMsg'              => __( 'Installation completed successfully.' ),
+			'aysDelete'                 => __( 'Are you sure you want to delete this plugin?' ),
+			'deletinggMsg'              => __( 'Deleting... please wait.' ),
+			'deletedMsg'                => __( 'Plugin successfully deleted.' ),
+			'updatedPluginsMsg'         => __( 'Plugin updates complete.' ),
 			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
 			'updatedPluginsSuccessMsg'  => __( 'Successes: %d.' ),
 			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
 			'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
 			/* translators: 1. Total plugins to update. */
-			'updatePluginsQueuedMsg'  => __( '%d plugin updates queued.' ),
-			'updateQueued'       => __( 'Update queued.')
+			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
+			'updateQueued'              => __( 'Update queued.')
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
