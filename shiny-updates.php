@@ -147,14 +147,18 @@ class Shiny_Updates {
 	 * @return array
 	 */
 	function plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
+		// Adjust the delete action, adding data attributes.
 		if ( ! empty( $actions['delete'] ) ) {
 			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
 			$actions['delete'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=delete-selected&amp;checked[]=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'bulk-plugins' ) . '" class="delete" aria-label="' . esc_attr( sprintf( __( 'Delete %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Delete' ) . '</a>';
 		}
-		if ( ! empty( $actions['update'] ) ) {
-			error_log( $actions['update']);
+
+		// Adjust the activate action, adding data attributes.
+		if ( ! empty( $actions['activate'] ) ) {
+			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
+			$actions['activate'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=delete-selected&amp;checked[]=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'bulk-plugins' ) . '" class="edit" aria-label="' . esc_attr( sprintf( __( 'Activate %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Activate' ) . '</a>';
 		}
-		error_log(json_encode($actions));
+
 		return $actions;
 	}
 
