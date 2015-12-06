@@ -1,10 +1,32 @@
-Index: src/wp-admin/includes/update.php
+Index: wp-admin/includes/class-wp-list-table.php
 ===================================================================
---- src/wp-admin/includes/update.php	(revision 35756)
-+++ src/wp-admin/includes/update.php	(working copy)
+--- wp-admin/includes/class-wp-list-table.php	(revision 35773)
++++ wp-admin/includes/class-wp-list-table.php	(working copy)
+@@ -459,6 +459,10 @@
+ 		if ( empty( $this->_actions ) )
+ 			return;
+
++		if ( '2' === $two && 'plugins' === $this->screen->id ) {
++			return;
++		}
++
+ 		echo '<label for="bulk-action-selector-' . esc_attr( $which ) . '" class="screen-reader-text">' . __( 'Select bulk action' ) . '</label>';
+ 		echo '<select name="action' . $two . '" id="bulk-action-selector-' . esc_attr( $which ) . "\">\n";
+ 		echo '<option value="-1">' . __( 'Bulk Actions' ) . "</option>\n";
+Index: wp-admin/includes/update.php
+===================================================================
+--- wp-admin/includes/update.php	(revision 35773)
++++ wp-admin/includes/update.php	(working copy)
 @@ -335,10 +335,10 @@
  			$active_class = is_plugin_active( $file ) ? ' active' : '';
  		}
 
 -		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message">';
 +		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '" data-name="' . esc_attr( $plugin_name ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message">';
+
+ 		if ( ! current_user_can( 'update_plugins' ) ) {
+-			printf( __('There is a new version of %1$s available. <a href="%2$s" class="thickbox" title="%3$s">View version %4$s details</a>.'), $plugin_name, esc_url($details_url), esc_attr($plugin_name), $r->new_version );
++			printf( __('There is a new version of %1$s available. <a href="%2$s" class="thickbox" title="%3$s">View version %4$s details</a>.'), $plugin_name, esc_url($details_url), esc_attr( $plugin_name ), $r->new_version );
+ 		} elseif ( empty($r->package) ) {
+ 			printf( __('There is a new version of %1$s available. <a href="%2$s" class="thickbox" title="%3$s">View version %4$s details</a>. <em>Automatic update is unavailable for this plugin.</em>'), $plugin_name, esc_url($details_url), esc_attr($plugin_name), $r->new_version );
+ 		} else {
