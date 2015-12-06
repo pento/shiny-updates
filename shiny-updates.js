@@ -56,7 +56,7 @@ window.wp = window.wp || {};
 			$message.data( 'originaltext', $message.html() );
 		}
 
-		wp.updates.updateProgressMessage( message );
+		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + message );
 		$message.text( wp.updates.l10n.updating );
 
 		if ( wp.updates.updateLock ) {
@@ -119,7 +119,7 @@ window.wp = window.wp || {};
 
 		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' );
 		$updateMessage.text( wp.updates.l10n.updated );
-		wp.updates.updateProgressMessage( wp.updates.l10n.updatedMsg );
+		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + wp.updates.l10n.updatedMsg );
 
 		wp.updates.decrementCount( 'plugin' );
 
@@ -187,7 +187,7 @@ window.wp = window.wp || {};
 			});
 		}
 
-		wp.updates.updateProgressMessage( error_message, 'notice-error' );
+		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + error_message, 'notice-error' );
 
 		$(document).trigger( 'wp-plugin-update-error', response );
 		wp.updates.pluginUpdateFailures++;
@@ -265,11 +265,11 @@ window.wp = window.wp || {};
 				);
 				wp.a11y.speak( wp.updates.l10n.updatingMsg, 'notice-error' === queuedMessage.messageClass ? 'assertive' : '' );
 
-				// After a brief delay, call the queue again.
+				// After a brief delay, unlock and call the queue again.
 				setTimeout( function() {
 					wp.updates.messageLock = false;
 					wp.updates.processMessageQueue();
-				}, 500 );
+				}, 1000 );
 			}
 		}
 	}
@@ -309,12 +309,29 @@ window.wp = window.wp || {};
 		wp.updates.pluginUpdateFailures  = 0;
 		wp.updates.updateLock            = false;
 		wp.updates.updateProgressMessage (
-			wp.updates.l10n.updatePluginsQueuedMsg.replace( '%d', plugins.length )
+			wp.updates.getPluginUpdateProgress()
 		);
 
 		wp.updates.queueChecker();
 
 	};
+
+	/**
+	 * Build a string describing the bulk update progress.
+	 */
+	wp.updates.getPluginUpdateProgress = function() {
+		var updateMessage = wp.updates.l10n.updatePluginsQueuedMsg.replace( '%d', wp.updates.pluginsToUpdateCount );
+
+		if ( 0 !== wp.updates.pluginUpdateSuccesses ) {
+		updateMessage += ' ' + wp.updates.l10n.updatedPluginsSuccessMsg.replace( '%d', wp.updates.pluginUpdateSuccesses );
+		}
+		if ( 0 !== wp.updates.pluginUpdateFailures ) {
+		updateMessage += ' ' + wp.updates.l10n.updatedPluginsFailureMsg.replace( '%d', wp.updates.pluginUpdateFailures );
+		}
+
+		return updateMessage;
+
+	}
 
 	/**
 	 * Send an Ajax request to the server to install a plugin.
