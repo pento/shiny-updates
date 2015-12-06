@@ -262,9 +262,16 @@ window.wp = window.wp || {};
 			} );
 		});
 
-		wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
+		// Start the bulk plugin updates. Reset the count for totals, successes and failures.
+		//wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
+		wp.updates.pluginsToUpdateCount  = plugins.length;
+		wp.updates.pluginUpdateSuccesses = 0;
+		wp.updates.pluginUpdateFailures  = 0;
+		wp.updates.updateLock            = false;
+		wp.updates.updateProgressMessage (
+			wp.updates.l10n.updatePluginsQueuedMsg.replace( '%d', plugins.length )
+		);
 
-		wp.updates.updateLock = false;
 		wp.updates.queueChecker();
 
 	};
