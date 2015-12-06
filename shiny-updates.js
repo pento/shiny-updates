@@ -39,11 +39,11 @@ window.wp = window.wp || {};
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
 			$message   = $updateRow.find( '.update-message' );
-			name       = $updateRow.data( 'name' );
+			name       = pluginData[ plugin ].Name;
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$message = $card.find( '.update-now' );
-			name = $message.data( 'name' );
+			name     = $message.data( 'name' );
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
@@ -113,7 +113,7 @@ window.wp = window.wp || {};
 		} else if ( 'plugin-install' === pagenow ) {
 			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' );
 			$updateMessage.addClass( 'button-disabled' );
-			name = $updateMessage.data( 'name' );
+			name = pluginData[ response.plugin ].Name;
 			$updateMessage.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', name ) );
 		}
 
@@ -167,7 +167,7 @@ window.wp = window.wp || {};
 			$message.html( error_message ).removeClass( 'updating-message' );
 		} else if ( 'plugin-install' === pagenow ) {
 			$button = $card.find( '.update-now' );
-			name = $button.data( 'name' );
+			name    = pluginData[ response.plugin ].Name;
 
 			$card
 				.addClass( 'plugin-card-update-failed' )
@@ -434,7 +434,7 @@ window.wp = window.wp || {};
 		});
 
 		$button
-			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $button.data( 'name' ) ) )
+			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', pluginData[ response.plugin ].Name ) )
 			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
