@@ -28,9 +28,6 @@ class Shiny_Updates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
-		// Bulk plugin updates.
-		add_action( 'wp_ajax_bulk-update-plugins', array( $this, 'wp_ajax_bulk_update_plugins' ) );
-
 		// Add the update HTML for plugin updates progress.
 		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
 
@@ -271,81 +268,7 @@ add_action( 'init', array( 'Shiny_Updates', 'init' ) );
  *
  * @see Plugin_Upgrader
  */
-function wp_ajax_bulk_update_plugins() {
-	check_ajax_referer( 'updates' );
 
-	$plugins = array();
-
-	foreach ( $_POST['plugins'] as $plugin ) {
-		$slug   = sanitize_key( $plugin['slug'] );
-		$plugin = urldecode( $plugin['plugin'] );
-
-		$plugins[ $plugin ] = array(
-			'slug'   => $slug,
-			'plugin' => $plugin,
-		);
-
-		$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
-		if ( $plugin_data['Version'] ) {
-			$plugins[ $plugin ]['oldVersion'] = sprintf( __( 'Version %s' ), $plugin_data['Version'] );
-		}
-	};
-
-	$status = array(
-		'update'  => 'plugin',
-		'plugins' => $plugins,
-	);
-
-	if ( ! current_user_can( 'update_plugins' ) ) {
-		$status['error'] = __( 'You do not have sufficient permissions to update plugins for this site.' );
-	}
-
-	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-
-	wp_update_plugins();
-
-	$skin     = new Automatic_Upgrader_Skin();
-	$upgrader = new Plugin_Upgrader( $skin );
-	$results  = $upgrader->bulk_upgrade( array_keys( $plugins ) );
-
-	if ( is_array( $results ) ) {
-		foreach ( $results as $plugin => $result ) {
-
-			// Plugin is already at the latest version.
-			if ( true === $result ) {
-				$status['plugins'][ $plugin ]['error'] = $upgrader->strings['up_to_date'];
-			}
-
-			$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
-			if ( $plugin_data['Version'] ) {
-				$status['plugins'][ $plugin ]['newVersion'] = sprintf( __( 'Version %s' ), $plugin_data['Version'] );
-			}
-		}
-
-		wp_send_json_success( $status );
-
-	} else if ( is_wp_error( $results ) ) {
-		$status['error'] = $results->get_error_message();
-		wp_send_json_error( $status );
-
-	} else if ( is_bool( $results ) && ! $results ) {
-		global $wp_filesystem;
-
-		$status['errorCode'] = 'unable_to_connect_to_filesystem';
-		$status['error'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
-
-		// Pass through the error from WP_Filesystem if one was raised
-		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['error'] = $wp_filesystem->errors->get_error_message();
-		}
-
-		wp_send_json_error( $status );
-
-	}
-
-	// An unhandled error occurred.
-	$status['error'] = __( 'Plugin update failed.' );
-	wp_send_json_error( $status );
 }
 
 /**
