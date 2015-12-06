@@ -17,7 +17,7 @@ window.wp = window.wp || {};
 	 * @since 4.5.0
 	 */
 	wp.updates.ajaxAlways = function() {
-		$( '#the-list' ).find( '.check-column [type="checkbox"]' ).attr( 'checked', false );
+		$( '#the-list' ).find( '.check-column [type="checkbox"]' ).prop( 'checked', false );
 
 		wp.updates.updateLock = false;
 		wp.updates.queueChecker();
@@ -807,7 +807,7 @@ window.wp = window.wp || {};
 			event.preventDefault();
 
 			// Uncheck the bulk checkboxes.
-			$( '.manage-column [type="checkbox"]' ).attr( 'checked', false );
+			$( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
 			//Find all the checkboxes which have been checked.
 			$bulkActionForm
