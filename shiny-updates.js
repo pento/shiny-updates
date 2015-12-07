@@ -85,8 +85,8 @@ window.wp = window.wp || {};
 		};
 
 		wp.ajax.post( 'update-plugin', data )
-			.done( wp.updates.updatePluginSuccess )
-			.fail( wp.updates.updatePluginError );
+			.done( wp.updates.updateSuccess )
+			.fail( wp.updates.updateError );
 	};
 
 	/**
@@ -96,7 +96,7 @@ window.wp = window.wp || {};
 	 *
 	 * @param {object} response
 	 */
-	wp.updates.updatePluginSuccess = function( response ) {
+	wp.updates.updateSuccess = function( response ) {
 		var $updateMessage, name, $pluginRow, newText;
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first().prev();
@@ -145,7 +145,7 @@ window.wp = window.wp || {};
 	 *
 	 * @param {object} response
 	 */
-	wp.updates.updatePluginError = function( response ) {
+	wp.updates.updateError = function( response ) {
 		var $card = $( '.plugin-card-' + response.slug ),
 			$message,
 			$button,
