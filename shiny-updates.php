@@ -28,14 +28,15 @@ class Shiny_Updates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
+
 		// Add the update HTML for plugin updates progress.
 		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
 
 		// Search plugins
-		add_action( 'wp_ajax_search-plugins', array( $this, 'wp_ajax_search_plugins' ) );
+		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
 
 		// Plugin deletions.
-		add_action( 'wp_ajax_delete-plugin', array( $this, 'wp_ajax_delete_plugin' ) );
+		add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
 
 		// Plugin activations.
 		add_action( 'wp_ajax_activate-plugin', array( $this, 'wp_ajax_activate_plugin' ) );
@@ -43,17 +44,16 @@ class Shiny_Updates {
 		// Plugin row actions.
 		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
 
-
 		// Themes.
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
 
 		// Update Themes.
 		add_action( 'admin_footer_themes.php', array( $this, 'admin_footer' ) );
-		add_action( 'wp_ajax_install-theme', array( $this, 'wp_ajax_install_theme' ) );
+		add_action( 'wp_ajax_install-theme', 'wp_ajax_install_theme' );
 
 		// Install Themes.
 		add_action( 'admin_footer_theme-install.php', array( $this, 'admin_footer' ) );
-		add_action( 'wp_ajax_update-theme', array( $this, 'wp_ajax_update_theme' ) );
+		add_action( 'wp_ajax_update-theme', 'wp_ajax_update_theme' );
 
 		// Auto Updates.
 		add_action( 'admin_init', array( $this, 'load_auto_updates_settings' ) );
