@@ -28,7 +28,6 @@ class Shiny_Updates {
 	function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
-
 		// Add the update HTML for plugin updates progress.
 		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
 
