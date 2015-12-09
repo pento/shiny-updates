@@ -75,6 +75,21 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
+		},
+
+		deleteTheme: function( event ) {
+			event.preventDefault();
+
+			// Confirmation dialog for deleting a theme.
+			if ( ! confirm( wp.themes.data.settings.confirmDelete ) ) {
+				return;
+			}
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			wp.updates.deleteTheme( this.model.get('id') );
 		}
 	});
 

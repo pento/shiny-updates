@@ -47,12 +47,15 @@ class Shiny_Updates {
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
 
 		// Update Themes.
-		add_action( 'admin_footer_themes.php', array( $this, 'admin_footer' ) );
+		add_action( 'admin_footer-themes.php', array( $this, 'admin_footer' ) );
 		add_action( 'wp_ajax_install-theme', 'wp_ajax_install_theme' );
 
 		// Install Themes.
-		add_action( 'admin_footer_theme-install.php', array( $this, 'admin_footer' ) );
+		add_action( 'admin_footer-theme-install.php', array( $this, 'admin_footer' ) );
 		add_action( 'wp_ajax_update-theme', 'wp_ajax_update_theme' );
+
+		// Delete Themes.
+		add_action( 'wp_ajax_delete-theme', 'wp_ajax_delete_theme' );
 
 		// Auto Updates.
 		add_action( 'admin_init', array( $this, 'load_auto_updates_settings' ) );
@@ -404,6 +407,55 @@ function wp_ajax_update_theme() {
 	// An unhandled error occurred.
 	$status['error'] = __( 'Update failed.' );
 	wp_send_json_error( $status );
+}
+
+/**
+ * AJAX handler for deleting a theme.
+ *
+ * @since 4.5.0
+ */
+function wp_ajax_delete_theme() {
+	check_ajax_referer( 'updates' );
+
+	$stylesheet = sanitize_key( $_POST['slug'] );
+	$status     = array(
+		'update' => 'theme',
+		'slug'   => $stylesheet,
+	);
+
+	if ( ! current_user_can( 'delete_themes' ) ) {
+		$status['error'] = __( 'You do not have sufficient permissions to delete themes on this site.' );
+		wp_send_json_error( $status );
+	}
+
+	if (  wp_get_theme( $stylesheet )->exists() ) {
+		$status['error'] = __( 'The requested theme does not exist.' );
+		wp_send_json_error( $status );
+	}
+
+	include_once( ABSPATH . 'wp-admin/includes/theme.php' );
+
+	$result = delete_theme( $stylesheet );
+
+	if ( is_wp_error( $result ) ) {
+		$status['error'] = $result->get_error_message();
+		wp_send_json_error( $status );
+
+	} else if ( is_null( $result ) ) {
+		global $wp_filesystem;
+
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
+
+		wp_send_json_error( $status );
+	}
+
+	wp_send_json_success( $status );
 }
 
 /**

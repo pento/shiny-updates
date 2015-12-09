@@ -718,6 +718,105 @@ window.wp = window.wp || {};
 	};
 
 	/**
+	 * Send an Ajax request to the server to install a theme.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {string} slug
+	 */
+	wp.updates.deleteTheme = function( slug ) {
+		var $message = $( '.theme-install[data-slug="' + slug + '"]' ),
+			data;
+
+		$message.addClass( 'updating-message' );
+		if ( $message.html() !== wp.updates.l10n.installing ){
+			$message.data( 'originaltext', $message.html() );
+		}
+
+		$message.text( wp.updates.l10n.installing );
+		wp.a11y.speak( wp.updates.l10n.installingMsg );
+
+		// Remove previous error messages, if any.
+		$( '.install-theme-info, #' + slug ).removeClass( 'theme-install-failed' ).find( '.notice.notice-error' ).remove();
+
+		if ( wp.updates.updateLock ) {
+			wp.updates.updateQueue.push( {
+				type: 'delete-theme',
+				data: {
+					slug: slug
+				}
+			} );
+			return;
+		}
+
+		wp.updates.updateLock = true;
+
+		data = {
+			'_ajax_nonce':   wp.updates.ajaxNonce,
+			'slug':          slug,
+			username:        wp.updates.filesystemCredentials.ftp.username,
+			password:        wp.updates.filesystemCredentials.ftp.password,
+			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
+			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
+			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
+			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
+		};
+
+		wp.ajax.post( 'delete-theme', data )
+			.done( wp.updates.deleteThemeSuccess )
+			.fail( wp.updates.deleteThemeError )
+			.always( wp.updates.ajaxAlways );
+	};
+
+	/**
+	 * On theme delete success, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 ** @param {object} response
+	 */
+	wp.updates.deleteThemeSuccess = function( response ) {
+		wp.a11y.speak( wp.updates.l10n.deletedMsg );
+
+		$document.trigger( 'wp-delete-theme-success', response );
+
+		// Back to themes overview.
+		window.location = location.pathname;
+	};
+
+	/**
+	 * On theme delete failure, update the UI appropriately.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param {object} response
+	 */
+	wp.updates.deleteThemeError = function( response ) {
+	/*
+		var $card, $button,
+			errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error );
+
+		if ( $document.find( 'body' ).hasClass( 'full-overlay-active' ) ) {
+			$button = $( '.theme-install[data-slug="' + response.slug + '"]' );
+			$card   = $( '.install-theme-info' );
+		} else {
+			$card   = $( '#' + response.slug );
+			$button = $card.find( '.theme-install' );
+		}
+
+		$card
+			.addClass( 'theme-install-failed' )
+			.append( '<div class="notice notice-error"><p>' + errorMessage + '</p></div>' );
+
+		$button
+			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', $card.find( '.theme-name' ).text() ) )
+			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
+
+		wp.a11y.speak( errorMessage, 'assertive' );
+	*/
+		$document.trigger( 'wp-theme-delete-error', response );
+	};
+
+	/**
 	 * If an install/update job has been placed in the queue, queueChecker pulls it out and runs it.
 	 *
 	 * @since 4.2.0
@@ -768,6 +867,10 @@ window.wp = window.wp || {};
 
 			case 'update-theme':
 				wp.updates.updateTheme( job.data.slug );
+				break;
+
+			case 'delete-theme':
+				wp.updates.deleteTheme( job.data.slug );
 				break;
 
 			default:
