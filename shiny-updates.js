@@ -131,7 +131,7 @@ window.wp = window.wp || {};
 		 */
 		wp.updates.updateLock = false;
 
-		$(document).trigger( 'wp-plugin-update-success', response );
+		$document.trigger( 'wp-plugin-update-success', response );
 		wp.updates.pluginUpdateSuccesses++;
 
 		wp.updates.queueChecker();
@@ -189,7 +189,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + error_message, 'notice-error' );
 
-		$(document).trigger( 'wp-plugin-update-error', response );
+		$document.trigger( 'wp-plugin-update-error', response );
 		wp.updates.pluginUpdateFailures++;
 
 		wp.updates.queueChecker();
