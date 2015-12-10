@@ -99,9 +99,9 @@ class Shiny_Updates {
 			return;
 		}
 
-		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.css' );
+		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
-		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'shiny-updates.js', array( 'updates' ), null, true );
+		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'updates' ), null, true );
 		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
 			'installNow'                => __( 'Install Now' ),
 			'installing'                => __( 'Installing...' ),
@@ -131,7 +131,7 @@ class Shiny_Updates {
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
-			wp_enqueue_script( 'shiny-theme-updates', plugin_dir_url( __FILE__ ) . 'shiny-theme-updates.js', array( 'theme', 'updates' ), null, true );
+			wp_enqueue_script( 'shiny-theme-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-theme-updates.js', array( 'theme', 'updates' ), null, true );
 		}
 
 		if ( 'theme-install.php' == $hook ) {

@@ -219,7 +219,7 @@ window.wp = window.wp || {};
 			wp.updates.progressUpdates  = $( '#wp-progress-placeholder' );
 		}
 
-	}
+	};
 
 	/**
 	 * Update the progress indicator with a new message.
@@ -235,7 +235,7 @@ window.wp = window.wp || {};
 			wp.updates.messageQueue.push( { message: message, messageClass: messageClass } );
 			wp.updates.processMessageQueue();
 		}
-	}
+	};
 
 	/**
 	 * Process the message queue, showing messages in a throttled manner.
@@ -272,7 +272,7 @@ window.wp = window.wp || {};
 				}, 1000 );
 			}
 		}
-	}
+	};
 
 
 	/**
@@ -331,7 +331,7 @@ window.wp = window.wp || {};
 
 		return updateMessage;
 
-	}
+	};
 
 	/**
 	 * Send an Ajax request to the server to install a plugin.
@@ -1070,7 +1070,7 @@ window.wp = window.wp || {};
 				$( '#the-list' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
 			});
-		} )
+		} );
 	});
 
 })( jQuery, window.wp );
