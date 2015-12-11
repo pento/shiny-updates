@@ -18,3 +18,18 @@ window.shinyUpdates = {
 	"updatePluginsQueuedMsg": "%d plugin updates queued.",
 	"updateQueued": "Update queued."
 };
+window.pluginData = {
+	"test\/test.php": {
+		"Name": "Test",
+		"PluginURI": "",
+		"Version": "1.0",
+		"Description": "",
+		"Author": "author",
+		"AuthorURI": "",
+		"TextDomain": "",
+		"DomainPath": "",
+		"Network": false,
+		"Title": "Test",
+		"AuthorName": "Author"
+	}
+};

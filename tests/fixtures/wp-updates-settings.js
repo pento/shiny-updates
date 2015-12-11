@@ -14,3 +14,8 @@ window._wpUpdatesSettings = {
 		"beforeunload": "Plugin updates may not complete if you navigate away from this page."
 	}
 };
+window._wpUtilSettings = {
+	"ajax": {
+		"url": "\/wp-admin\/admin-ajax.php"
+	}
+};
