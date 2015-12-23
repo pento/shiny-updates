@@ -56,8 +56,10 @@ window.wp = window.wp || {};
 			$message.data( 'originaltext', $message.html() );
 		}
 
-		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + message );
+		wp.updates.updateProgressMessage( message );
 		$message.text( wp.updates.l10n.updating );
+
+		$( document ).trigger( 'wp-plugin-updating' );
 
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
@@ -119,7 +121,7 @@ window.wp = window.wp || {};
 
 		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' );
 		$updateMessage.text( wp.updates.l10n.updated );
-		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + wp.updates.l10n.updatedMsg );
+		wp.updates.updateProgressMessage( wp.updates.l10n.updatedMsg );
 
 		wp.updates.decrementCount( 'plugin' );
 
@@ -187,7 +189,7 @@ window.wp = window.wp || {};
 			});
 		}
 
-		wp.updates.updateProgressMessage( wp.updates.getPluginUpdateProgress() + ' ' + error_message, 'notice-error' );
+		wp.updates.updateProgressMessage( error_message, 'notice-error' );
 
 		$document.trigger( 'wp-plugin-update-error', response );
 		wp.updates.pluginUpdateFailures++;
@@ -264,6 +266,8 @@ window.wp = window.wp || {};
 					)
 				);
 				wp.a11y.speak( wp.updates.l10n.updatingMsg, 'notice-error' === queuedMessage.messageClass ? 'assertive' : '' );
+
+				$( document ).trigger( 'wp-progress-updated' );
 
 				// After a brief delay, unlock and call the queue again.
 				setTimeout( function() {
@@ -1030,10 +1034,11 @@ window.wp = window.wp || {};
 			wp.a11y.speak( wp.updates.l10n.updateCancel );
 		} );
 
+
 		/**
 		 * Make notices dismissable.
  		 */
-		$document.on( 'wp-plugin-update-error wp-plugin-install-error wp-theme-update-error wp-theme-install-error', function () {
+		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function () {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),

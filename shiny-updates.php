@@ -78,7 +78,7 @@ class Shiny_Updates {
 		?>
 		<div id="wp-progress-placeholder"></div>
 		<script id="tmpl-wp-progress-template" type="text/html">
-			<div class="notice wp-progress-update <# if ( data.noticeClass ) { #> {{ data.noticeClass }} <# } #>">
+			<div class="notice wp-progress-update is-dismissible <# if ( data.noticeClass ) { #> {{ data.noticeClass }} <# } #>">
 				<p>
 					<# if ( data.message ) { #>
 						{{ data.message }}
