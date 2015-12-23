@@ -255,7 +255,7 @@ window.wp = window.wp || {};
 				queuedMessage = wp.updates.messageQueue.shift();
 
 				// Update the progress message.
-				wp.updates.progressUpdates.html(
+				wp.updates.progressUpdates.append(
 					wp.updates.progressTemplate(
 						{
 							message: queuedMessage.message,
