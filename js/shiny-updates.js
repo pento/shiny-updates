@@ -1,3 +1,4 @@
+/*global pagenow, _, pluginData */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -32,7 +33,7 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.updatePlugin = function( plugin, slug ) {
-		var $message, name, $updateRow, message,
+		var $message, name, $updateRow, message, data,
 			$card = $( '.plugin-card-' + slug );
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
@@ -74,7 +75,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateLock = true;
 
-		var data = {
+		data = {
 			_ajax_nonce:     wp.updates.ajaxNonce,
 			plugin:          plugin,
 			slug:            slug,
@@ -103,11 +104,11 @@ window.wp = window.wp || {};
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first().prev();
 			$updateMessage = $pluginRow.next().find( '.update-message' );
-			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
+			$pluginRow.addClass( 'updated' ).removeClass( 'update');
 
 			// Update the version number in the row.
-			newText = $pluginRow.find('.plugin-version-author-uri').html().replace( response.oldVersion, response.newVersion );
-			$pluginRow.find('.plugin-version-author-uri').html( newText );
+			newText = $pluginRow.find( '.plugin-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
+			$pluginRow.find( '.plugin-version-author-uri' ).html( newText );
 
 			// Add updated class to update message plugin row.
 			$pluginRow.addClass( 'updated' );
@@ -147,11 +148,8 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateError = function( response ) {
-		var $card = $( '.plugin-card-' + response.slug ),
-			$message,
-			$button,
-			name,
-			error_message;
+		var $message, $button, name, errorMessage,
+			$card = $( '.plugin-card-' + response.slug );
 
 		wp.updates.updateDoneSuccessfully = false;
 		wp.updates.updateLock             = false;
@@ -165,18 +163,18 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		error_message = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+		errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
-			$message.html( error_message ).removeClass( 'updating-message' );
+			$message.html( errorMessage ).removeClass( 'updating-message' );
 		} else if ( 'plugin-install' === pagenow ) {
 			$button = $card.find( '.update-now' );
 			name    = pluginData[ response.plugin ].Name;
 
 			$card
 				.addClass( 'plugin-card-update-failed' )
-				.append( '<div class="notice notice-error is-dismissible"><p>' + error_message + '</p></div>' );
+				.append( '<div class="notice notice-error is-dismissible"><p>' + errorMessage + '</p></div>' );
 
 			$button
 				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', name ) )
@@ -461,6 +459,8 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.deletePlugin = function( plugin, slug ) {
+		var data;
+
 		wp.a11y.speak( wp.updates.l10n.deletinggMsg );
 
 		if ( wp.updates.updateLock ) {
@@ -476,7 +476,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateLock = true;
 
-		var data = {
+		data = {
 			_ajax_nonce:     wp.updates.ajaxNonce,
 			plugin:          plugin,
 			slug:            slug,
@@ -801,7 +801,8 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.deleteThemeError = function( response ) {
-	/*
+
+		// @todo fix/test this section
 		var $card, $button,
 			errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error );
 
@@ -822,7 +823,7 @@ window.wp = window.wp || {};
 			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
-	*/
+
 		$document.trigger( 'wp-theme-delete-error', response );
 	};
 
@@ -833,6 +834,8 @@ window.wp = window.wp || {};
 	 * @since 4.5.0 Can handle multiple job types.
 	 */
 	wp.updates.queueChecker = function() {
+		var updateMessage, installMessage, job;
+
 		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
 			// Clear the update lock when the queue is empty.
 			if ( wp.updates.updateQueue.length <= 0 ) {
@@ -840,7 +843,7 @@ window.wp = window.wp || {};
 				// Update the status with final progress results.
 				switch ( wp.updates.currentJobType ) {
 					case 'bulk-update-plugin':
-						var updateMessage = wp.updates.l10n.updatedPluginsMsg;
+						updateMessage = wp.updates.l10n.updatedPluginsMsg;
 						if ( 0 !== wp.updates.pluginUpdateSuccesses ) {
 							updateMessage += ' ' + wp.updates.l10n.updatedPluginsSuccessMsg.replace( '%d', wp.updates.pluginUpdateSuccesses );
 						}
@@ -854,7 +857,7 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		var job = wp.updates.updateQueue.shift();
+		job = wp.updates.updateQueue.shift();
 
 		wp.updates.currentJobType = job.type;
 
@@ -985,7 +988,9 @@ window.wp = window.wp || {};
 		/**
 		 * Bulk update for plugins.
 		 */
-		$bulkActionForm.on( 'click', '[type="submit"]', function ( event ) {
+		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
+			var plugins;
+
 			if ( 'update-selected' !== $( event.target ).siblings( 'select' ).val() ) {
 				return;
 			}
@@ -994,16 +999,16 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			var plugins = [];
+			plugins = [];
 			event.preventDefault();
 
 			// Uncheck the bulk checkboxes.
 			$( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
-			//Find all the checkboxes which have been checked.
+			// Find all the checkboxes which have been checked.
 			$bulkActionForm
 				.find( 'input[name="checked[]"]:checked' )
-				.each( function ( index, element ) {
+				.each( function( index, element ) {
 					var $checkbox = $( element );
 
 					// Uncheck the box.
@@ -1045,7 +1050,7 @@ window.wp = window.wp || {};
 		/**
 		 * Make notices dismissable.
  		 */
-		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function () {
+		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
