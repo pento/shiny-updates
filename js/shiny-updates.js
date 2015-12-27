@@ -157,7 +157,11 @@ window.wp = window.wp || {};
 
 		wp.updates.updateDoneSuccessfully = false;
 		wp.updates.updateLock             = false;
-		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
+		if (
+			response.errorCode &&
+			'unable_to_connect_to_filesystem' === response.errorCode &&
+			wp.updates.shouldRequestFilesystemCredentials
+		) {
 			wp.updates.credentialError( response, 'update-plugin' );
 			wp.updates.queueChecker();
 			return;
