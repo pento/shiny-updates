@@ -44,6 +44,7 @@ window.wp = window.wp || {};
 		} else if ( 'plugin-install' === pagenow ) {
 			$message = $card.find( '.update-now' );
 			name     = $message.data( 'name' );
+
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
@@ -180,6 +181,7 @@ window.wp = window.wp || {};
 				.html( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
 
 			$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
+
 				// Use same delay as the total duration of the notice fadeTo + slideUp animation.
 				setTimeout( function() {
 					$card
@@ -233,6 +235,7 @@ window.wp = window.wp || {};
 
 		// Check to ensure progress updater is set up.
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
+
 			// Add the message to a queue so we can display messages in a throttled manner.
 			wp.updates.messageQueue.push( { message: message, messageClass: messageClass } );
 			wp.updates.processMessageQueue();
@@ -249,8 +252,10 @@ window.wp = window.wp || {};
 		if ( wp.updates.messageLock ) {
 			setTimeout( wp.updates.processMessageQueue, 500 );
 		} else {
+
 			// Anything left in the queue?
 			if ( 0 !== wp.updates.messageQueue.length ) {
+
 				// Lock message displaying until our message displays briefly.
 				wp.updates.messageLock = true;
 
@@ -277,7 +282,6 @@ window.wp = window.wp || {};
 			}
 		}
 	};
-
 
 	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
@@ -307,7 +311,6 @@ window.wp = window.wp || {};
 		});
 
 		// Start the bulk plugin updates. Reset the count for totals, successes and failures.
-		//wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
 		wp.updates.pluginsToUpdateCount  = plugins.length;
 		wp.updates.pluginUpdateSuccesses = 0;
 		wp.updates.pluginUpdateFailures  = 0;
@@ -429,6 +432,7 @@ window.wp = window.wp || {};
 			.append( '<div class="notice notice-error is-dismissible"><p>' + errorMessage + '</p></div>' );
 
 		$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
+
 			// Use same delay as the total duration of the notice fadeTo + slideUp animation.
 			setTimeout( function() {
 				$card
@@ -851,6 +855,8 @@ window.wp = window.wp || {};
 		var job = wp.updates.updateQueue.shift();
 
 		wp.updates.currentJobType = job.type;
+
+		// Handle a queue job.
 		switch ( job.type ) {
 			case 'install-plugin':
 				wp.updates.installPlugin( job.data.slug );
@@ -912,6 +918,7 @@ window.wp = window.wp || {};
 	 * @since 4.5.0 Triggers an event for callbacks to listen to and add their actions.
 	 */
 	wp.updates.requestForCredentialsModalCancel = function() {
+
 		// No updateLock and no updateQueue means we already have cleared things up.
 		if ( false === wp.updates.updateLock && 0 === wp.updates.updateQueue.length ) {
 			return;
