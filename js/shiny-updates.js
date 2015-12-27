@@ -23,7 +23,6 @@ window.wp = window.wp || {};
 		wp.updates.queueChecker();
 	};
 
-
 	/**
 	 * Send an Ajax request to the server to update a plugin.
 	 *
@@ -139,7 +138,6 @@ window.wp = window.wp || {};
 
 		wp.updates.queueChecker();
 	};
-
 
 	/**
 	 * On a plugin update error, update the UI appropriately.
@@ -893,7 +891,6 @@ window.wp = window.wp || {};
 		}
 	};
 
-
 	/**
 	 * Request the users filesystem credentials if we don't have them already.
 	 *
@@ -1044,7 +1041,6 @@ window.wp = window.wp || {};
 			$message.html( $message.data( 'originaltext' ) );
 			wp.a11y.speak( wp.updates.l10n.updateCancel );
 		} );
-
 
 		/**
 		 * Make notices dismissable.
