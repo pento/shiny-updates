@@ -26,12 +26,16 @@ module.exports = function(grunt) {
 			tasks: ['jshint', 'qunit']
 		},
 		jscs: {
-			src: 'js/**/*.js',
-				options: {
-					config: '.jscsrc',
-					verbose: true,
-					preset: 'wordpress'
-				}
+			src: [
+				'js/**/*.js',
+				'tests/**/*.js',
+				'!tests/vendor/**/*js'
+			],
+			options: {
+				config: '.jscsrc',
+				verbose: true,
+				preset: 'wordpress'
+			}
 		}
 	});
 

@@ -104,7 +104,7 @@ window.wp = window.wp || {};
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first().prev();
 			$updateMessage = $pluginRow.next().find( '.update-message' );
-			$pluginRow.addClass( 'updated' ).removeClass( 'update');
+			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
 			// Update the version number in the row.
 			newText = $pluginRow.find( '.plugin-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
@@ -191,7 +191,7 @@ window.wp = window.wp || {};
 			} );
 		}
 
-		wp.updates.updateProgressMessage( error_message, 'notice-error' );
+		wp.updates.updateProgressMessage( errorMessage, 'notice-error' );
 
 		$document.trigger( 'wp-plugin-update-error', response );
 		wp.updates.pluginUpdateFailures++;
@@ -248,7 +248,7 @@ window.wp = window.wp || {};
 	 * Process the message queue, showing messages in a throttled manner.
 	 */
 	wp.updates.processMessageQueue = function() {
-		var message;
+		var queuedMessage;
 
 		// If we are already displaying a message, pause briefly and try again.
 		if ( wp.updates.messageLock ) {
@@ -291,7 +291,7 @@ window.wp = window.wp || {};
 	 * @since 4.5.0
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
-		var $message, data;
+		var $message;
 
 		// Set up the progress indicaator.
 		wp.updates.setupProgressIndicator();
@@ -317,7 +317,7 @@ window.wp = window.wp || {};
 		wp.updates.pluginUpdateSuccesses = 0;
 		wp.updates.pluginUpdateFailures  = 0;
 		wp.updates.updateLock            = false;
-		wp.updates.updateProgressMessage (
+		wp.updates.updateProgressMessage(
 			wp.updates.getPluginUpdateProgress()
 		);
 
@@ -836,12 +836,14 @@ window.wp = window.wp || {};
 	 * @since 4.5.0 Can handle multiple job types.
 	 */
 	wp.updates.queueChecker = function() {
-		var updateMessage, installMessage, job;
+		var updateMessage, job;
 
 		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
+
 			// Clear the update lock when the queue is empty.
 			if ( wp.updates.updateQueue.length <= 0 ) {
 				wp.updates.updateLock = false;
+
 				// Update the status with final progress results.
 				switch ( wp.updates.currentJobType ) {
 					case 'bulk-update-plugin':
@@ -1078,8 +1080,7 @@ window.wp = window.wp || {};
 				data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           val
-				},
-				jqxhr;
+				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
 				wp.updates.searchRequest.abort();
