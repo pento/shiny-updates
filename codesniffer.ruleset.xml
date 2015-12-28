@@ -9,7 +9,8 @@
     <!-- Include the WordPress ruleset, with exclusions. -->
     <rule ref="WordPress">
         <exclude name="WordPress.XSS.EscapeOutput.UnsafePrintingFunction" />
-        <exclude name="WordPress.VIP.ValidatedSanitizedInput.InputNotValidated" />
+        <exclude name="WordPress.XSS.EscapeOutput.OutputNotEscaped" />
+        <exclude name="WordPress.Variables.GlobalVariables.OverrideProhibited" />
     </rule>
 
     <!-- Include sniffs for PHP cross-version compatibility. -->
