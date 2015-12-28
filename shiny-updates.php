@@ -5,6 +5,8 @@
  * Author: the WordPress team
  * Version: 2
  * License: GPL2
+ *
+ * @package Shiny_Updates
  */
 
 /**
@@ -132,7 +134,7 @@ class Shiny_Updates {
 			'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
 			/* translators: 1. Total plugins to update. */
 			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
-			'updateQueued'              => __( 'Update queued.'),
+			'updateQueued'              => __( 'Update queued.' ),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
@@ -296,6 +298,10 @@ function wp_ajax_activate_plugin() {
 function wp_ajax_install_theme() {
 	check_ajax_referer( 'updates' );
 
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
+
 	$status = array(
 		'install' => 'theme',
 		'slug'    => sanitize_key( $_POST['slug'] ),
@@ -352,6 +358,10 @@ function wp_ajax_install_theme() {
  */
 function wp_ajax_update_theme() {
 	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
 
 	$stylesheet = sanitize_key( $_POST['slug'] );
 	$status     = array(
@@ -421,6 +431,10 @@ function wp_ajax_update_theme() {
 function wp_ajax_delete_theme() {
 	check_ajax_referer( 'updates' );
 
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
+
 	$stylesheet = sanitize_key( $_POST['slug'] );
 	$status     = array(
 		'update' => 'theme',
@@ -469,6 +483,10 @@ function wp_ajax_delete_theme() {
  */
 function wp_ajax_delete_plugin() {
 	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) || empty( $_POST['plugin'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
+	}
 
 	$plugin      = urldecode( wp_unslash( $_POST['plugin'] ) );
 	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
@@ -525,6 +543,10 @@ function wp_ajax_delete_plugin() {
  */
 function wp_ajax_install_plugin() {
 	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
+	}
 
 	$status = array(
 		'install' => 'plugin',
