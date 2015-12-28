@@ -1283,7 +1283,7 @@ window.wp = window.wp || {};
 			} );
 		} );
 
-		$( '#plugin-search-input' ).on( 'keyup search', function() {
+		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
 			var data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           $( this ).val()
@@ -1297,7 +1297,7 @@ window.wp = window.wp || {};
 				$theList.empty().append( response.items );
 				delete wp.updates.searchRequest;
 			} );
-		} );
+		}, 200 ) );
 	} );
 
 	/**
