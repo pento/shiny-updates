@@ -488,7 +488,7 @@ function wp_ajax_delete_plugin() {
 		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
 	}
 
-	$plugin      = filter_var( $_POST['plugin'], FILTER_SANITIZE_STRING );
+	$plugin      = filter_var( wp_unslash( $_POST['plugin'] ), FILTER_SANITIZE_STRING );
 	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
 
 	$status = array(
