@@ -1059,7 +1059,7 @@ window.wp = window.wp || {};
 			});
 		} );
 
-		$( '#plugin-search-input' ).on( 'keyup search', function() {
+		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
 			var val  = $( this ).val(),
 				data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
@@ -1075,7 +1075,7 @@ window.wp = window.wp || {};
 				$( '#the-list' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
 			});
-		} );
+		}, 200 ) );
 	});
 
 })( jQuery, window.wp );
