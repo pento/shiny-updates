@@ -1,3 +1,4 @@
+/*global pagenow, _, pluginData, commonL10n */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -23,7 +24,6 @@ window.wp = window.wp || {};
 		wp.updates.queueChecker();
 	};
 
-
 	/**
 	 * Send an Ajax request to the server to update a plugin.
 	 *
@@ -33,7 +33,7 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.updatePlugin = function( plugin, slug ) {
-		var $message, name, $updateRow, message,
+		var $message, name, $updateRow, message, data,
 			$card = $( '.plugin-card-' + slug );
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
@@ -44,6 +44,7 @@ window.wp = window.wp || {};
 		} else if ( 'plugin-install' === pagenow ) {
 			$message = $card.find( '.update-now' );
 			name     = $message.data( 'name' );
+
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
@@ -52,7 +53,7 @@ window.wp = window.wp || {};
 		$message.attr( 'aria-label', message );
 
 		$message.addClass( 'updating-message' );
-		if ( $message.html() !== wp.updates.l10n.updating ){
+		if ( $message.html() !== wp.updates.l10n.updating ) {
 			$message.data( 'originaltext', $message.html() );
 		}
 
@@ -74,7 +75,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateLock = true;
 
-		var data = {
+		data = {
 			_ajax_nonce:     wp.updates.ajaxNonce,
 			plugin:          plugin,
 			slug:            slug,
@@ -106,8 +107,8 @@ window.wp = window.wp || {};
 			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
 			// Update the version number in the row.
-			newText = $pluginRow.find('.plugin-version-author-uri').html().replace( response.oldVersion, response.newVersion );
-			$pluginRow.find('.plugin-version-author-uri').html( newText );
+			newText = $pluginRow.find( '.plugin-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
+			$pluginRow.find( '.plugin-version-author-uri' ).html( newText );
 
 			// Add updated class to update message plugin row.
 			$pluginRow.addClass( 'updated' );
@@ -139,7 +140,6 @@ window.wp = window.wp || {};
 		wp.updates.queueChecker();
 	};
 
-
 	/**
 	 * On a plugin update error, update the UI appropriately.
 	 *
@@ -148,48 +148,50 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateError = function( response ) {
-		var $card = $( '.plugin-card-' + response.slug ),
-			$message,
-			$button,
-			name,
-			error_message;
+		var $message, $button, name, errorMessage,
+			$card = $( '.plugin-card-' + response.slug );
 
 		wp.updates.updateDoneSuccessfully = false;
 		wp.updates.updateLock             = false;
-		if ( response.errorCode && response.errorCode == 'unable_to_connect_to_filesystem' && wp.updates.shouldRequestFilesystemCredentials ) {
+		if (
+			response.errorCode &&
+			'unable_to_connect_to_filesystem' === response.errorCode &&
+			wp.updates.shouldRequestFilesystemCredentials
+		) {
 			wp.updates.credentialError( response, 'update-plugin' );
 			wp.updates.queueChecker();
 			return;
 		}
 
-		error_message = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+		errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
-			$message.html( error_message ).removeClass( 'updating-message' );
+			$message.html( errorMessage ).removeClass( 'updating-message' );
 		} else if ( 'plugin-install' === pagenow ) {
 			$button = $card.find( '.update-now' );
 			name    = pluginData[ response.plugin ].Name;
 
 			$card
 				.addClass( 'plugin-card-update-failed' )
-				.append( '<div class="notice notice-error is-dismissible"><p>' + error_message + '</p></div>' );
+				.append( '<div class="notice notice-error is-dismissible"><p>' + errorMessage + '</p></div>' );
 
 			$button
 				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', name ) )
 				.html( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
 
 			$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
+
 				// Use same delay as the total duration of the notice fadeTo + slideUp animation.
 				setTimeout( function() {
 					$card
 						.removeClass( 'plugin-card-update-failed' )
 						.find( '.column-name a' ).focus();
 				}, 200 );
-			});
+			} );
 		}
 
-		wp.updates.updateProgressMessage( error_message, 'notice-error' );
+		wp.updates.updateProgressMessage( errorMessage, 'notice-error' );
 
 		$document.trigger( 'wp-plugin-update-error', response );
 		wp.updates.pluginUpdateFailures++;
@@ -201,8 +203,10 @@ window.wp = window.wp || {};
 	 * Set up the progress indicator.
 	 */
 	wp.updates.setupProgressIndicator = function() {
+		var $progressTemplate;
+
 		/**
-		 * Only set uo the progress updater once.
+		 * Only set up the progress updater once.
 		 */
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
 			return;
@@ -233,6 +237,7 @@ window.wp = window.wp || {};
 
 		// Check to ensure progress updater is set up.
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
+
 			// Add the message to a queue so we can display messages in a throttled manner.
 			wp.updates.messageQueue.push( { message: message, messageClass: messageClass } );
 			wp.updates.processMessageQueue();
@@ -243,14 +248,16 @@ window.wp = window.wp || {};
 	 * Process the message queue, showing messages in a throttled manner.
 	 */
 	wp.updates.processMessageQueue = function() {
-		var message;
+		var queuedMessage;
 
 		// If we are already displaying a message, pause briefly and try again.
 		if ( wp.updates.messageLock ) {
 			setTimeout( wp.updates.processMessageQueue, 500 );
 		} else {
+
 			// Anything left in the queue?
 			if ( 0 !== wp.updates.messageQueue.length ) {
+
 				// Lock message displaying until our message displays briefly.
 				wp.updates.messageLock = true;
 
@@ -278,14 +285,13 @@ window.wp = window.wp || {};
 		}
 	};
 
-
 	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
 	 *
 	 * @since 4.5.0
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
-		var $message, data;
+		var $message;
 
 		// Set up the progress indicaator.
 		wp.updates.setupProgressIndicator();
@@ -304,15 +310,14 @@ window.wp = window.wp || {};
 				type: 'bulk-update-plugin',
 				data: plugin
 			} );
-		});
+			} );
 
 		// Start the bulk plugin updates. Reset the count for totals, successes and failures.
-		//wp.updates.updateProgressMessage( wp.updates.l10n.updatingMsg );
 		wp.updates.pluginsToUpdateCount  = plugins.length;
 		wp.updates.pluginUpdateSuccesses = 0;
 		wp.updates.pluginUpdateFailures  = 0;
 		wp.updates.updateLock            = false;
-		wp.updates.updateProgressMessage (
+		wp.updates.updateProgressMessage(
 			wp.updates.getPluginUpdateProgress()
 		);
 
@@ -429,13 +434,14 @@ window.wp = window.wp || {};
 			.append( '<div class="notice notice-error is-dismissible"><p>' + errorMessage + '</p></div>' );
 
 		$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
+
 			// Use same delay as the total duration of the notice fadeTo + slideUp animation.
 			setTimeout( function() {
 				$card
 					.removeClass( 'plugin-card-update-failed' )
 					.find( '.column-name a' ).focus();
 			}, 200 );
-		});
+		} );
 
 		$button
 			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', pluginData[ response.plugin ].Name ) )
@@ -455,6 +461,8 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.deletePlugin = function( plugin, slug ) {
+		var data;
+
 		wp.a11y.speak( wp.updates.l10n.deletinggMsg );
 
 		if ( wp.updates.updateLock ) {
@@ -470,7 +478,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateLock = true;
 
-		var data = {
+		data = {
 			_ajax_nonce:     wp.updates.ajaxNonce,
 			plugin:          plugin,
 			slug:            slug,
@@ -500,9 +508,9 @@ window.wp = window.wp || {};
 		wp.updates.updateDoneSuccessfully = true;
 
 		// Removes the plugin and updates rows.
-		$( '#' + response.slug + '-update, #' + response.id ).css({ backgroundColor:'#faafaa' }).fadeOut( 350, function() {
+		$( '#' + response.slug + '-update, #' + response.id ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
 			$( this ).remove();
-		});
+		} );
 
 		$document.trigger( 'wp-plugin-delete-success', response );
 	};
@@ -537,7 +545,7 @@ window.wp = window.wp || {};
 			data;
 
 		$message.addClass( 'updating-message' );
-		if ( $message.html() !== wp.updates.l10n.updating ){
+		if ( $message.html() !== wp.updates.l10n.updating ) {
 			$message.data( 'originaltext', $message.html() );
 		}
 
@@ -632,7 +640,7 @@ window.wp = window.wp || {};
 			data;
 
 		$message.addClass( 'updating-message' );
-		if ( $message.html() !== wp.updates.l10n.installing ){
+		if ( $message.html() !== wp.updates.l10n.installing ) {
 			$message.data( 'originaltext', $message.html() );
 		}
 
@@ -733,7 +741,7 @@ window.wp = window.wp || {};
 			data;
 
 		$message.addClass( 'updating-message' );
-		if ( $message.html() !== wp.updates.l10n.installing ){
+		if ( $message.html() !== wp.updates.l10n.installing ) {
 			$message.data( 'originaltext', $message.html() );
 		}
 
@@ -795,7 +803,8 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.deleteThemeError = function( response ) {
-	/*
+
+		// @todo fix/test this section
 		var $card, $button,
 			errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error );
 
@@ -816,7 +825,7 @@ window.wp = window.wp || {};
 			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
-	*/
+
 		$document.trigger( 'wp-theme-delete-error', response );
 	};
 
@@ -827,14 +836,18 @@ window.wp = window.wp || {};
 	 * @since 4.5.0 Can handle multiple job types.
 	 */
 	wp.updates.queueChecker = function() {
+		var updateMessage, job;
+
 		if ( wp.updates.updateLock || wp.updates.updateQueue.length <= 0 ) {
+
 			// Clear the update lock when the queue is empty.
 			if ( wp.updates.updateQueue.length <= 0 ) {
 				wp.updates.updateLock = false;
+
 				// Update the status with final progress results.
 				switch ( wp.updates.currentJobType ) {
 					case 'bulk-update-plugin':
-						var updateMessage = wp.updates.l10n.updatedPluginsMsg;
+						updateMessage = wp.updates.l10n.updatedPluginsMsg;
 						if ( 0 !== wp.updates.pluginUpdateSuccesses ) {
 							updateMessage += ' ' + wp.updates.l10n.updatedPluginsSuccessMsg.replace( '%d', wp.updates.pluginUpdateSuccesses );
 						}
@@ -848,9 +861,11 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		var job = wp.updates.updateQueue.shift();
+		job = wp.updates.updateQueue.shift();
 
 		wp.updates.currentJobType = job.type;
+
+		// Handle a queue job.
 		switch ( job.type ) {
 			case 'install-plugin':
 				wp.updates.installPlugin( job.data.slug );
@@ -883,7 +898,6 @@ window.wp = window.wp || {};
 		}
 	};
 
-
 	/**
 	 * Request the users filesystem credentials if we don't have them already.
 	 *
@@ -912,6 +926,7 @@ window.wp = window.wp || {};
 	 * @since 4.5.0 Triggers an event for callbacks to listen to and add their actions.
 	 */
 	wp.updates.requestForCredentialsModalCancel = function() {
+
 		// No updateLock and no updateQueue means we already have cleared things up.
 		if ( false === wp.updates.updateLock && 0 === wp.updates.updateQueue.length ) {
 			return;
@@ -963,7 +978,7 @@ window.wp = window.wp || {};
 			var $link = $( event.target );
 			event.preventDefault();
 
-			if ( ! confirm( wp.updates.l10n.aysDelete ) ) {
+			if ( ! window.confirm( wp.updates.l10n.aysDelete ) ) {
 				return;
 			}
 
@@ -977,7 +992,9 @@ window.wp = window.wp || {};
 		/**
 		 * Bulk update for plugins.
 		 */
-		$bulkActionForm.on( 'click', '[type="submit"]', function ( event ) {
+		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
+			var plugins;
+
 			if ( 'update-selected' !== $( event.target ).siblings( 'select' ).val() ) {
 				return;
 			}
@@ -986,16 +1003,16 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			var plugins = [];
+			plugins = [];
 			event.preventDefault();
 
 			// Uncheck the bulk checkboxes.
 			$( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
-			//Find all the checkboxes which have been checked.
+			// Find all the checkboxes which have been checked.
 			$bulkActionForm
 				.find( 'input[name="checked[]"]:checked' )
-				.each( function ( index, element ) {
+				.each( function( index, element ) {
 					var $checkbox = $( element );
 
 					// Uncheck the box.
@@ -1003,12 +1020,12 @@ window.wp = window.wp || {};
 
 					// Only add updatable plugins to the queue.
 					if ( $checkbox.parents( 'tr' ).hasClass( 'update' ) ) {
-						plugins.push({
+						plugins.push( {
 							plugin: $checkbox.val(),
 							slug:   $checkbox.parents( 'tr' ).prop( 'id' )
-						});
+						} );
 					}
-			});
+			} );
 			if ( 0 !== plugins.length ) {
 				wp.updates.bulkUpdatePlugins( plugins );
 			}
@@ -1034,11 +1051,10 @@ window.wp = window.wp || {};
 			wp.a11y.speak( wp.updates.l10n.updateCancel );
 		} );
 
-
 		/**
 		 * Make notices dismissable.
  		 */
-		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function () {
+		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
@@ -1051,12 +1067,12 @@ window.wp = window.wp || {};
 					$el.fadeTo( 100, 0, function() {
 						$el.slideUp( 100, function() {
 							$el.remove();
-						});
-					});
-				});
+						} );
+					} );
+				} );
 
 				$el.append( $button );
-			});
+			} );
 		} );
 
 		/**
@@ -1094,8 +1110,7 @@ window.wp = window.wp || {};
 				data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           val
-				},
-				jqxhr;
+				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
 				wp.updates.searchRequest.abort();
@@ -1108,4 +1123,4 @@ window.wp = window.wp || {};
 		}, 250 ) );
 	});
 
-})( jQuery, window.wp );
+} )( jQuery, window.wp );

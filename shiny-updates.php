@@ -1,15 +1,22 @@
 <?php
-/*
+/**
  * Plugin Name: Shiny Updates
  * Description: Hide the ugly parts of updating WordPress.
  * Author: the WordPress team
  * Version: 2
  * License: GPL2
+ *
+ * @package Shiny_Updates
  */
 
+/**
+ * Class Shiny_Updates.
+ */
 class Shiny_Updates {
 
 	/**
+	 * Singleton.
+	 *
 	 * @return Shiny_Updates
 	 */
 	static function init() {
@@ -31,7 +38,7 @@ class Shiny_Updates {
 		// Add the update HTML for plugin updates progress.
 		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
 
-		// Search plugins
+		// Search plugins.
 		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
 		add_action( 'wp_ajax_search-install-plugins', 'wp_ajax_search_install_plugins' );
 
@@ -128,7 +135,7 @@ class Shiny_Updates {
 			'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
 			/* translators: 1. Total plugins to update. */
 			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
-			'updateQueued'              => __( 'Update queued.')
+			'updateQueued'              => __( 'Update queued.' ),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
@@ -172,15 +179,14 @@ class Shiny_Updates {
 	/**
 	 * Adds a class and a data attribute to the "update now"-link.
 	 *
-	 * @param array $themes
+	 * @param array $themes Theme data.
 	 * @return array
 	 */
 	function theme_data( $themes ) {
-		$update = get_site_transient('update_themes');
+		$update = get_site_transient( 'update_themes' );
 		foreach ( $themes as $stylesheet => $theme ) {
-			if ( isset( $theme['hasUpdate'] ) && $theme['hasUpdate'] && current_user_can('update_themes') && ! empty( $update->response[ $stylesheet ] ) ) {
-				$themes[ $stylesheet ]['update'] = sprintf( '<p><strong>' . __( 'There is a new version of %1$s available. <a href="%2$s" class="thickbox" title="%3$s">View version %4$s details</a> or <a id="update-theme" data-slug="%5$s" href="%6$s">update now</a>.' ) . '</strong></p>',
-					$theme['name'], esc_url( add_query_arg(array('TB_iframe' => 'true', 'width' => 1024, 'height' => 800), $update->response[ $stylesheet ]['url']) ), esc_attr( $theme['name'] ), $update->response[ $stylesheet ]['new_version'], $stylesheet, wp_nonce_url( admin_url( 'update.php?action=upgrade-theme&amp;theme=' . urlencode( $stylesheet ) ), 'upgrade-theme_' . $stylesheet ) );
+			if ( isset( $theme['hasUpdate'] ) && $theme['hasUpdate'] && current_user_can( 'update_themes' ) && ! empty( $update->response[ $stylesheet ] ) ) {
+				$themes[ $stylesheet ]['update'] = sprintf( '<p><strong>' . __( 'There is a new version of %1$s available. <a href="%2$s" class="thickbox" title="%3$s">View version %4$s details</a> or <a id="update-theme" data-slug="%5$s" href="%6$s">update now</a>.' ) . '</strong></p>', $theme['name'], esc_url( add_query_arg( array( 'TB_iframe' => 'true', 'width' => 1024, 'height' => 800 ), $update->response[ $stylesheet ]['url'] ) ), esc_attr( $theme['name'] ), $update->response[ $stylesheet ]['new_version'], $stylesheet, wp_nonce_url( admin_url( 'update.php?action=upgrade-theme&amp;theme=' . urlencode( $stylesheet ) ), 'upgrade-theme_' . $stylesheet ) );
 			}
 		}
 		return $themes;
@@ -291,6 +297,12 @@ function wp_ajax_activate_plugin() {
  * @since 4.5.0
  */
 function wp_ajax_install_theme() {
+	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
+
 	$status = array(
 		'install' => 'theme',
 		'slug'    => sanitize_key( $_POST['slug'] ),
@@ -301,14 +313,12 @@ function wp_ajax_install_theme() {
 		wp_send_json_error( $status );
 	}
 
-	check_ajax_referer( 'updates' );
-
 	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
 	include_once( ABSPATH . 'wp-admin/includes/theme.php' );
 
 	$api = themes_api( 'theme_information', array(
 		'slug'   => $status['slug'],
-		'fields' => array( 'sections' => false )
+		'fields' => array( 'sections' => false ),
 	) );
 
 	if ( is_wp_error( $api ) ) {
@@ -339,7 +349,6 @@ function wp_ajax_install_theme() {
 
 	// Never switch to theme (unlike plugin activation).
 	// See WP_Theme_Install_List_Table::_get_theme_status() if we wanted to check on post-install status.
-
 	wp_send_json_success( $status );
 }
 
@@ -350,6 +359,10 @@ function wp_ajax_install_theme() {
  */
 function wp_ajax_update_theme() {
 	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
 
 	$stylesheet = sanitize_key( $_POST['slug'] );
 	$status     = array(
@@ -419,6 +432,10 @@ function wp_ajax_update_theme() {
 function wp_ajax_delete_theme() {
 	check_ajax_referer( 'updates' );
 
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_theme_specified' ) );
+	}
+
 	$stylesheet = sanitize_key( $_POST['slug'] );
 	$status     = array(
 		'update' => 'theme',
@@ -468,7 +485,11 @@ function wp_ajax_delete_theme() {
 function wp_ajax_delete_plugin() {
 	check_ajax_referer( 'updates' );
 
-	$plugin      = urldecode( $_POST['plugin'] );
+	if ( empty( $_POST['slug'] ) || empty( $_POST['plugin'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
+	}
+
+	$plugin      = filter_var( wp_unslash( $_POST['plugin'] ), FILTER_SANITIZE_STRING );
 	$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
 
 	$status = array(
@@ -523,6 +544,10 @@ function wp_ajax_delete_plugin() {
  */
 function wp_ajax_install_plugin() {
 	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
+	}
 
 	$status = array(
 		'install' => 'plugin',
