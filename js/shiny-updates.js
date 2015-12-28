@@ -1283,6 +1283,36 @@ window.wp = window.wp || {};
 			} );
 		} );
 
+		/**
+		 * Handle changes to the plugin search box on the new-plugin page, searching the repository dynamically.
+		 *
+		 * @todo Add a spinner during search?
+		 */
+		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
+			var val  = $( this ).val(),
+				data = {
+					'_ajax_nonce': wp.updates.ajaxNonce,
+					's':           val,
+					'tab':         'search'
+				},
+				jqxhr;
+
+			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
+				wp.updates.searchRequest.abort();
+			}
+
+			wp.updates.searchRequest = wp.ajax.post( 'search-install-plugins', data ).done( function( response ) {
+				$( '#the-list' ).empty().append( response.items );
+				delete wp.updates.searchRequest;
+			});
+		}, 250 ) );
+
+		/**
+		 * Handle changes to the plugin search box on the Installed Plugins screen,
+		 * searching the plugin list dynamically.
+		 *
+		 * @todo Add a spinner during search?
+		 */
 		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
 			var data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
