@@ -28,7 +28,6 @@ module.exports = function(grunt) {
 		jscs: {
 			src: 'js/**/*.js',
 				options: {
-					config: '.jscsrc',
 					verbose: true,
 					preset: 'wordpress'
 				}
