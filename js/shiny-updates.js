@@ -310,7 +310,7 @@ window.wp = window.wp || {};
 				type: 'bulk-update-plugin',
 				data: plugin
 			} );
-			} );
+		} );
 
 		// Start the bulk plugin updates. Reset the count for totals, successes and failures.
 		wp.updates.pluginsToUpdateCount  = plugins.length;
