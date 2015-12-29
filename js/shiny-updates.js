@@ -1294,8 +1294,7 @@ window.wp = window.wp || {};
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           val,
 					'tab':         'search'
-				},
-				jqxhr;
+				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
 				wp.updates.searchRequest.abort();
