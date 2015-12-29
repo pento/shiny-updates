@@ -328,6 +328,10 @@ function wp_ajax_install_theme() {
 	$upgrader = new Theme_Upgrader( new Automatic_Upgrader_Skin() );
 	$result   = $upgrader->install( $api->download_link );
 
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		$status['debug'] = $upgrader->skin->get_upgrade_messages();
+	}
+
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
@@ -384,6 +388,10 @@ function wp_ajax_update_theme() {
 
 	$upgrader = new Theme_Upgrader( new Automatic_Upgrader_Skin() );
 	$result   = $upgrader->bulk_upgrade( array( $stylesheet ) );
+
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		$status['debug'] = $upgrader->skin->get_upgrade_messages();
+	}
 
 	if ( is_array( $result ) && ! empty( $result[ $stylesheet ] ) ) {
 
@@ -575,6 +583,10 @@ function wp_ajax_install_plugin() {
 
 	$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
 	$result = $upgrader->install( $api->download_link );
+
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		$status['debug'] = $upgrader->skin->get_upgrade_messages();
+	}
 
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();

@@ -16,12 +16,20 @@ window.wp = window.wp || {};
 	 * @todo Maybe we can find a better function name here.
 	 *
 	 * @since 4.5.0
+	 *
+	 * @param {object} response
 	 */
-	wp.updates.ajaxAlways = function() {
+	wp.updates.ajaxAlways = function( response ) {
 		$( '#the-list' ).find( '.check-column [type="checkbox"]' ).prop( 'checked', false );
 
 		wp.updates.updateLock = false;
 		wp.updates.queueChecker();
+
+		if ( 'undefined' !== typeof response.debug ) {
+			_.map( response.debug, function( message ) {
+				console.log( $( '<p />' ).html( message ).text() );
+			} );
+		}
 	};
 
 	/**
