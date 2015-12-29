@@ -1289,10 +1289,9 @@ window.wp = window.wp || {};
 		 * @todo Add a spinner during search?
 		 */
 		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
-			var val  = $( this ).val(),
-				data = {
+			var data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
-					's':           val,
+					's':           $( this ).val(),
 					'tab':         'search'
 				};
 
