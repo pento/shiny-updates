@@ -1,4 +1,4 @@
-/*global pagenow, _, pluginData, commonL10n */
+/* global pagenow, _, pluginData, commonL10n */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -27,7 +27,7 @@ window.wp = window.wp || {};
 
 		if ( 'undefined' !== typeof response.debug ) {
 			_.map( response.debug, function( message ) {
-				console.log( $( '<p />' ).html( message ).text() );
+				window.console.log( $( '<p />' ).html( message ).text() );
 			} );
 		}
 	};
