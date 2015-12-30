@@ -136,6 +136,7 @@ class Shiny_Updates {
 			/* translators: 1. Total plugins to update. */
 			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
 			'updateQueued'              => __( 'Update queued.' ),
+			'searchResults'             => __( 'Search results for &#8220;%s&#8221;' ),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
@@ -598,7 +599,6 @@ function wp_ajax_install_plugin() {
 	wp_send_json_success( $status );
 }
 
-
 /**
  * Ajax handler for searching plugins.
  *
@@ -621,15 +621,17 @@ function wp_ajax_search_plugins() {
 		wp_send_json_error( $status );
 	}
 
+	// Set the correct requester, so pagination works.
+	$_SERVER['REQUEST_URI'] = add_query_arg( array_diff_key( $_POST, array( '_ajax_nonce' => null, 'action' => null ) ), '/wp-admin/plugins.php' );
+
 	$wp_list_table->prepare_items();
 
 	ob_start();
-	$wp_list_table->display_rows_or_placeholder();
+	$wp_list_table->display();
 	$status['items'] = ob_get_clean();
 
 	wp_send_json_success( $status );
 }
-
 
 /**
  * Ajax handler for searching plugins to install.
@@ -643,7 +645,7 @@ function wp_ajax_search_install_plugins() {
 	check_ajax_referer( 'updates' );
 
 	global $wp_list_table, $hook_suffix;
-	$hook_suffix = 'plugins.php';
+	$hook_suffix = 'plugin-install.php';
 
 	$status        = array();
 	$wp_list_table = _get_list_table( 'WP_Plugin_Install_List_Table' );
@@ -653,10 +655,13 @@ function wp_ajax_search_install_plugins() {
 		wp_send_json_error( $status );
 	}
 
+	// Set the correct requester, so pagination works.
+	$_SERVER['REQUEST_URI'] = add_query_arg( array_diff_key( $_POST, array( '_ajax_nonce' => null, 'action' => null ) ), '/wp-admin/plugin-install.php' );
+
 	$wp_list_table->prepare_items();
 
 	ob_start();
-	$wp_list_table->display_rows_or_placeholder();
+	$wp_list_table->display();
 	$status['items'] = ob_get_clean();
 
 	wp_send_json_success( $status );

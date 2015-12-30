@@ -1076,7 +1076,8 @@ window.wp = window.wp || {};
 		} );
 
 		/**
-		 * Handle changes to the plugin search box on the new-plugin page, searching the repository dynamically.
+		 * Handle changes to the plugin search box on the new-plugin page,
+		 * searching the repository dynamically.
 		 *
 		 * @todo Add a spinner during search?
 		 */
@@ -1084,7 +1085,8 @@ window.wp = window.wp || {};
 			var data = {
 					'_ajax_nonce': wp.updates.ajaxNonce,
 					's':           $( this ).val(),
-					'tab':         'search'
+					'tab':         'search',
+					'type':        $( '#typeselector' ).val()
 				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
@@ -1092,7 +1094,7 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.searchRequest = wp.ajax.post( 'search-install-plugins', data ).done( function( response ) {
-				$( '#the-list' ).empty().append( response.items );
+				$( '#plugin-filter' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
 			});
 		}, 250 ) );
@@ -1114,10 +1116,30 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.searchRequest = wp.ajax.post( 'search-plugins', data ).done( function( response ) {
-				$( '#the-list' ).empty().append( response.items );
+
+				// Can we just ditch this whole subtitle business?
+				var $subTitle    = $( '<span />' ).addClass( 'subtitle' ).text( wp.updates.l10n.searchResults.replace( '%s', data.s ) ),
+					$oldSubTitle = $( '.wrap .subtitle' );
+
+				if ( 0 === data.s.length ) {
+					$oldSubTitle.remove();
+				} else if ( $oldSubTitle.length ) {
+					$oldSubTitle.replaceWith( $subTitle );
+				} else {
+					$( '.wrap h1' ).append( $subTitle );
+				}
+
+				$( '#bulk-action-form' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
 			});
 		}, 250 ) );
+
+		/**
+		 * Trigger a search event when the search type gets changed.
+		 */
+		$( '#typeselector' ).on( 'change', function() {
+			$( 'input.wp-filter-search' ).trigger( 'search' );
+		});
 	});
 
 } )( jQuery, window.wp );
