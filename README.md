@@ -1,4 +1,4 @@
-# Shiny Updates [![Build Status](https://travis-ci.org/obenland/shiny-updates.svg)](https://travis-ci.org/obenland/shiny-updates)
+# Shiny Updates [![Build Status](https://travis-ci.org/obenland/shiny-updates.svg?branch=master)](https://travis-ci.org/obenland/shiny-updates)
 
 Removes the ugly bits of updating plugins, themes and such.
 

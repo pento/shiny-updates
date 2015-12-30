@@ -11,19 +11,11 @@ module.exports = function(grunt) {
 				'tests/**/*.js',
 				'!tests/vendor/**/*js'
 			],
-			options: {
-				// options here to override JSHint defaults
-				globals: {
-					jQuery: true,
-					console: true,
-					module: true,
-					document: true
-				}
-			}
+			options: grunt.file.readJSON('.jshintrc')
 		},
 		watch: {
 			files: ['<%= jshint.files %>'],
-			tasks: ['jshint', 'qunit']
+			tasks: ['jshint', 'jscs', 'qunit']
 		},
 		jscs: {
 			src: [
