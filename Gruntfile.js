@@ -28,6 +28,7 @@ module.exports = function(grunt) {
 			files: [
 				'**/*.php',
 				'!node_modules/**',
+				'!phpccs/**',
 				'!phpcs/**',
 				'!wpcs/**'
 			],
