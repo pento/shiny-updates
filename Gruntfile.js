@@ -9,10 +9,7 @@ module.exports = function(grunt) {
 				'Gruntfile.js',
 				'js/**/*.js',
 				'tests/**/*.js',
-				'!tests/vendor/**/*js',
-				'!node_modules/**',
-				'!phpcs/**',
-				'!wpcs/**'
+				'!tests/vendor/**'
 			],
 			options: grunt.file.readJSON('.jshintrc')
 		},
@@ -20,10 +17,7 @@ module.exports = function(grunt) {
 			src: [
 				'js/**/*.js',
 				'tests/**/*.js',
-				'!tests/vendor/**/*js',
-				'!node_modules/**',
-				'!phpcs/**',
-				'!wpcs/**'
+				'!tests/vendor/**'
 			],
 			options: {
 				verbose: true,
