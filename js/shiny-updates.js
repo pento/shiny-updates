@@ -90,11 +90,12 @@ window.wp = window.wp || {};
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
 		}
 
+		$message.addClass( 'updating-message' );
+
 		if ( ! wp.updates.updateLock ) {
 			message = wp.updates.l10n.updatingLabel.replace( '%s', name );
 			$message.attr( 'aria-label', message );
 
-			$message.addClass( 'updating-message' );
 			if ( $message.html() !== wp.updates.l10n.updating ) {
 				$message.data( 'originaltext', $message.html() );
 			}
@@ -104,16 +105,7 @@ window.wp = window.wp || {};
 
 			$document.trigger( 'wp-plugin-updating' );
 		}
-		if ( wp.updates.updateLock ) {
-			wp.updates.updateQueue.push( {
-				type: 'update-plugin',
-				data: {
-					plugin: plugin,
-					slug: slug
-				}
-			} );
-			return;
-		}
+
 		wp.updates.ajax( 'update-plugin', { plugin: plugin, slug: slug } )
 			.done( wp.updates.updateSuccess )
 			.fail( wp.updates.updateError )
