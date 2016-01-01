@@ -42,7 +42,7 @@ window.wp = window.wp || {};
 			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		});
 
-		return wp.ajax.post( action, data ).always( wp.updates.ajaxAlways );
+		return wp.ajax.post( action, data );
 	};
 
 	/**
@@ -116,7 +116,8 @@ window.wp = window.wp || {};
 		}
 		wp.updates.ajax( 'update-plugin', { plugin: plugin, slug: slug } )
 			.done( wp.updates.updateSuccess )
-			.fail( wp.updates.updateError );
+			.fail( wp.updates.updateError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -371,7 +372,8 @@ window.wp = window.wp || {};
 
 		wp.updates.ajax( 'install-plugin', { slug: slug } )
 			.done( wp.updates.installPluginSuccess )
-			.fail( wp.updates.installPluginError );
+			.fail( wp.updates.installPluginError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -449,7 +451,8 @@ window.wp = window.wp || {};
 
 		wp.updates.ajax( 'delete-plugin', { plugin: plugin, slug: slug } )
 			.done( wp.updates.deletePluginSuccess )
-			.fail( wp.updates.deletePluginError );
+			.fail( wp.updates.deletePluginError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -512,7 +515,8 @@ window.wp = window.wp || {};
 
 		wp.updates.ajax( 'update-theme', { 'slug': slug } )
 			.done( wp.updates.updateThemeSuccess )
-			.fail( wp.updates.updateThemeError );
+			.fail( wp.updates.updateThemeError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -582,7 +586,8 @@ window.wp = window.wp || {};
 
 		wp.updates.ajax( 'install-theme', { 'slug': slug } )
 			.done( wp.updates.installThemeSuccess )
-			.fail( wp.updates.installThemeError );
+			.fail( wp.updates.installThemeError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -658,7 +663,8 @@ window.wp = window.wp || {};
 
 		wp.updates.ajax( 'delete-theme', { 'slug': slug } )
 			.done( wp.updates.deleteThemeSuccess )
-			.fail( wp.updates.deleteThemeError );
+			.fail( wp.updates.deleteThemeError )
+			.always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -913,7 +919,7 @@ window.wp = window.wp || {};
 		/**
 		 * Make notices dismissable.
  		 */
-		$( document ) .on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
+		$document.on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
