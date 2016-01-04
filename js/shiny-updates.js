@@ -104,16 +104,7 @@ window.wp = window.wp || {};
 
 			$document.trigger( 'wp-plugin-updating' );
 		}
-		if ( wp.updates.updateLock ) {
-			wp.updates.updateQueue.push( {
-				type: 'update-plugin',
-				data: {
-					plugin: plugin,
-					slug: slug
-				}
-			} );
-			return;
-		}
+
 		wp.updates.ajax( 'update-plugin', { plugin: plugin, slug: slug } )
 			.done( wp.updates.updateSuccess )
 			.fail( wp.updates.updateError );
