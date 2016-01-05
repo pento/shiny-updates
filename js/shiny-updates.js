@@ -1,4 +1,4 @@
-/* global pagenow, pluginData, commonL10n */
+/* global pagenow, commonL10n */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -80,7 +80,7 @@ window.wp = window.wp || {};
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
 			$message   = $updateRow.find( '.update-message' );
-			name       = pluginData[ plugin ].Name;
+			name       = $updateRow.find( '.plugin-title strong' ).text();
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$message = $card.find( '.update-now' );
@@ -118,7 +118,8 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateSuccess = function( response ) {
-		var $updateMessage, name, $pluginRow, newText;
+		var $updateMessage, $pluginRow, newText;
+
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first().prev();
 			$updateMessage = $pluginRow.next().find( '.update-message' );
@@ -129,17 +130,15 @@ window.wp = window.wp || {};
 			$pluginRow.find( '.plugin-version-author-uri' ).html( newText );
 
 			// Add updated class to update message plugin row.
-			$pluginRow.addClass( 'updated' );
+			$pluginRow.next().addClass( 'updated' );
 
 		} else if ( 'plugin-install' === pagenow ) {
-			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' );
-			$updateMessage.addClass( 'button-disabled' );
-			name = pluginData[ response.plugin ].Name;
-			$updateMessage.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', name ) );
+			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' ).addClass( 'button-disabled' );
 		}
 
-		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' );
-		$updateMessage.text( wp.updates.l10n.updated );
+		$updateMessage.removeClass( 'updating-message' ).addClass( 'updated-message' )
+			.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', response.pluginName ) )
+			.text( wp.updates.l10n.updated );
 		wp.updates.updateProgressMessage( wp.updates.l10n.updatedMsg );
 
 		wp.updates.decrementCount( 'plugin' );
@@ -158,7 +157,7 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateError = function( response ) {
-		var $message, $button, name, errorMessage,
+		var $message, errorMessage,
 			$card = $( '.plugin-card-' + response.slug );
 
 		wp.updates.updateDoneSuccessfully = false;
@@ -178,15 +177,12 @@ window.wp = window.wp || {};
 			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
 			$message.html( errorMessage ).removeClass( 'updating-message' );
 		} else if ( 'plugin-install' === pagenow ) {
-			$button = $card.find( '.update-now' );
-			name    = pluginData[ response.plugin ].Name;
-
 			$card
 				.addClass( 'plugin-card-update-failed' )
 				.append( '<div class="notice notice-error is-dismissible"><p>' + errorMessage + '</p></div>' );
 
-			$button
-				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', name ) )
+			$card.find( '.update-now' )
+				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', response.pluginName ) )
 				.html( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
 
 			$card.on( 'click', '.notice.is-dismissible .notice-dismiss', function() {
@@ -419,7 +415,7 @@ window.wp = window.wp || {};
 		} );
 
 		$button
-			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', pluginData[ response.plugin ].Name ) )
+			.attr( 'aria-label', wp.updates.l10n.installFailedLabel.replace( '%s', response.pluginName ) )
 			.text( wp.updates.l10n.installFailedShort ).removeClass( 'updating-message' );
 
 		wp.a11y.speak( errorMessage, 'assertive' );
@@ -455,7 +451,7 @@ window.wp = window.wp || {};
 		wp.updates.updateDoneSuccessfully = true;
 
 		// Removes the plugin and updates rows.
-		$( '#' + response.slug + '-update, #' + response.id ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+		$( '#' + response.slug + '-update, #' + response.slug ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
 			$( this ).remove();
 		} );
 

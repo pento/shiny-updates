@@ -10,6 +10,7 @@
     <rule ref="WordPress">
         <exclude name="WordPress.XSS.EscapeOutput.UnsafePrintingFunction" />
         <exclude name="WordPress.XSS.EscapeOutput.OutputNotEscaped" />
+        <exclude name="WordPress.VIP.SuperGlobalInputUsage.AccessDetected" />
         <exclude name="WordPress.Variables.GlobalVariables.OverrideProhibited" />
     </rule>
 
