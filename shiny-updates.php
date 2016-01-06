@@ -49,6 +49,7 @@ class Shiny_Updates {
 
 		// Plugin row actions.
 		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
+		add_filter( 'network_admin_plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
 
 		// Themes.
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
@@ -102,13 +103,13 @@ class Shiny_Updates {
 	 * @param string $hook Current admin page.
 	 */
 	function enqueue_scripts( $hook ) {
-		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ) ) ) {
+		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ), true ) ) {
 			return;
 		}
 
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
-		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'updates' ), null, true );
+		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'updates', 'wp-util', 'wp-a11y' ), null, true );
 		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
 			'installNow'                => __( 'Install Now' ),
 			'installing'                => __( 'Installing...' ),
@@ -137,11 +138,11 @@ class Shiny_Updates {
 			'updateQueued'              => __( 'Update queued.' ),
 		) );
 
-		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
+		if ( 'theme-install.php' === $hook || ( 'themes.php' === $hook && ! is_network_admin() ) ) {
 			wp_enqueue_script( 'shiny-theme-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-theme-updates.js', array( 'theme', 'updates' ), null, true );
 		}
 
-		if ( 'theme-install.php' == $hook ) {
+		if ( 'theme-install.php' === $hook ) {
 			add_action( 'in_admin_header', array( $this, 'theme_install_templates' ) );
 		}
 		if ( 'plugins.php' === $hook ) {
@@ -371,6 +372,7 @@ function wp_ajax_update_theme() {
 	$status     = array(
 		'update'     => 'theme',
 		'slug'       => $stylesheet,
+		'oldVersion' => sprintf( __( 'Version %s' ), wp_get_theme( $stylesheet )->get( 'Version' ) ),
 		'newVersion' => '',
 	);
 
@@ -454,7 +456,7 @@ function wp_ajax_delete_theme() {
 		wp_send_json_error( $status );
 	}
 
-	if (  wp_get_theme( $stylesheet )->exists() ) {
+	if ( ! wp_get_theme( $stylesheet )->exists() ) {
 		$status['error'] = __( 'The requested theme does not exist.' );
 		wp_send_json_error( $status );
 	}
