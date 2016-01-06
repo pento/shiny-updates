@@ -102,7 +102,7 @@ class Shiny_Updates {
 	 * @param string $hook Current admin page.
 	 */
 	function enqueue_scripts( $hook ) {
-		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ) ) ) {
+		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ), true ) ) {
 			return;
 		}
 
@@ -137,11 +137,11 @@ class Shiny_Updates {
 			'updateQueued'              => __( 'Update queued.' ),
 		) );
 
-		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ) ) ) {
+		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ), true ) ) {
 			wp_enqueue_script( 'shiny-theme-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-theme-updates.js', array( 'theme', 'updates' ), null, true );
 		}
 
-		if ( 'theme-install.php' == $hook ) {
+		if ( 'theme-install.php' === $hook ) {
 			add_action( 'in_admin_header', array( $this, 'theme_install_templates' ) );
 		}
 		if ( 'plugins.php' === $hook ) {
