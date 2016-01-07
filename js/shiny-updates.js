@@ -1,4 +1,4 @@
-/* global tb_remove, pagenow, pluginData, commonL10n */
+/* global tb_remove, pagenow, commonL10n */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -289,7 +289,7 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateError = function( response ) {
-		var $card, $button, $message, name, errorMessage;
+		var $card, $message, errorMessage;
 
 		wp.updates.updateDoneSuccessfully = false;
 
