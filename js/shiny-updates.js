@@ -213,7 +213,7 @@ window.wp = window.wp || {};
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
 			$message   = $updateRow.find( '.update-message' );
-			message    =wp.updates.l10n.updatingLabel.replace( '%s', $updateRow.find( '.plugin-title strong' ).text() );
+			message    = wp.updates.l10n.updatingLabel.replace( '%s', $updateRow.find( '.plugin-title strong' ).text() );
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$card    = $( '.plugin-card-' + slug );
