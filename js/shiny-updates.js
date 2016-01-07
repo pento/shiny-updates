@@ -1094,26 +1094,6 @@ window.wp = window.wp || {};
 			wp.updates.updatePlugin( $button.data( 'plugin' ), $button.data( 'slug' ) );
 		} );
 
-		$( '#plugin_update_from_iframe' ).on( 'click', function( event ) {
-			var target = window.parent === window ? null : window.parent,
-				data;
-
-			$.support.postMessage = !! window.postMessage;
-
-			if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
-				return;
-			}
-
-			event.preventDefault();
-
-			data = {
-				'action': 'updatePlugin',
-				'slug': $( this ).data( 'slug' )
-			};
-
-			target.postMessage( JSON.stringify( data ), window.location.origin );
-		});
-
 		/**
 		 * Install a plugin.
 		 */
@@ -1262,10 +1242,44 @@ window.wp = window.wp || {};
 		} );
 	} );
 
+	/**
+	 * Update plugin from the details modal on `plugin-install.php`.
+	 *
+	 * @since 4.2.0
+	 */
+	$( '#plugin_update_from_iframe' ).on( 'click', function( event ) {
+		var target = window.parent === window ? null : window.parent,
+			job;
+
+		$.support.postMessage = !! window.postMessage;
+
+		if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
+			return;
+		}
+
+		event.preventDefault();
+
+		job = {
+			action: 'update-plugin',
+			data: {
+				plugin: $( this ).data( 'plugin' ),
+				slug: $( this ).data( 'slug' )
+			}
+		};
+
+		target.postMessage( JSON.stringify( job ), window.location.origin );
+	});
+
+	/**
+	 * Handles postMessage events.
+	 *
+	 * @since 4.2.0
+	 * @since 4.5.0 Switched `update-plugin` action to use the updateQueue.
+	 */
 	$( window ).on( 'message', function( event ) {
 		var originalEvent  = event.originalEvent,
 			expectedOrigin = document.location.protocol + '//' + document.location.hostname,
-			message, $card;
+			message;
 
 		if ( originalEvent.origin !== expectedOrigin ) {
 			return;
@@ -1278,29 +1292,21 @@ window.wp = window.wp || {};
 		}
 
 		switch ( message.action ) {
+			/*
+			 * Called from `wp-admin/includes/class-wp-upgrader-skins.php`.
+			 * @todo Check if that can be removed once this plugin was merged.
+			 */
 			case 'decrementUpdateCount':
 				wp.updates.decrementCount( message.upgradeType );
 				break;
 
-			case 'updatePlugin':
+			case 'update-plugin':
 				/* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
 				tb_remove();
 				/* jscs:enable */
 
-				if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-
-					// Return the user to the input box of the plugin's table row after closing the modal.
-					$( '#' + message.slug ).find( '.check-column input' ).focus();
-
-					// Trigger the update.
-					$( '.plugin-update-tr[data-slug="' + message.slug + '"]' ).find( '.update-link' ).trigger( 'click' );
-
-				} else if ( 'plugin-install' === pagenow ) {
-					$card = $( '.plugin-card-' + message.slug );
-
-					$card.find( '.column-name a' ).focus();
-					$card.find( '[data-slug="' + message.slug + '"]' ).trigger( 'click' );
-				}
+				wp.updates.updateQueue.push( message );
+				wp.updates.queueChecker();
 				break;
 		}
 	} );
