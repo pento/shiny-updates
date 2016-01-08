@@ -1,4 +1,4 @@
-/* global tb_remove, pagenow, commonL10n */
+/* global pagenow */
 window.wp = window.wp || {};
 
 (function( $, wp ) {
@@ -23,9 +23,6 @@ window.wp = window.wp || {};
 	 * @var object
 	 */
 	wp.updates.l10n = window._wpUpdatesSettings.l10n;
-
-	// @TODO: Remove on merge.
-	wp.updates.l10n = _.extend( wp.updates.l10n, window.shinyUpdates );
 
 	/**
 	 * Whether filesystem credentials need to be requested from the user.
@@ -293,11 +290,7 @@ window.wp = window.wp || {};
 
 		wp.updates.updateDoneSuccessfully = false;
 
-		if (
-			response.errorCode &&
-			'unable_to_connect_to_filesystem' === response.errorCode &&
-			wp.updates.shouldRequestFilesystemCredentials
-		) {
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
 			wp.updates.credentialError( response, 'update-plugin' );
 			return;
 		}
@@ -922,7 +915,7 @@ window.wp = window.wp || {};
 	/**
 	 * Request the users filesystem credentials if we don't have them already.
 	 *
-	 * @since 4.5.0
+	 * @since 4.2.0
 	 */
 	wp.updates.requestFilesystemCredentials = function( event ) {
 		if ( false === wp.updates.updateDoneSuccessfully ) {
@@ -1208,7 +1201,7 @@ window.wp = window.wp || {};
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
-					btnText = commonL10n.dismiss || '';
+					btnText = window.commonL10n.dismiss || '';
 
 				// Ensure plain text.
 				$button.find( '.screen-reader-text' ).text( btnText );
@@ -1260,7 +1253,8 @@ window.wp = window.wp || {};
 		event.preventDefault();
 
 		job = {
-			action: 'update-plugin',
+			action: 'updatePlugin',
+			type: 'update-plugin',
 			data: {
 				plugin: $( this ).data( 'plugin' ),
 				slug: $( this ).data( 'slug' )
@@ -1300,9 +1294,9 @@ window.wp = window.wp || {};
 				wp.updates.decrementCount( message.upgradeType );
 				break;
 
-			case 'update-plugin':
+			case 'updatePlugin':
 				/* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-				tb_remove();
+				window.tb_remove();
 				/* jscs:enable */
 
 				wp.updates.updateQueue.push( message );

@@ -111,33 +111,55 @@ class Shiny_Updates {
 
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
-		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'updates' ), null, true );
-		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
-			'installNow'                => __( 'Install Now' ),
-			'installing'                => __( 'Installing...' ),
-			'installed'                 => __( 'Installed!' ),
-			'installFailedShort'        => __( 'Install Failed!' ),
-			/* translators: Error string for a failed installation. */
-			'installFailed'             => __( 'Installation failed: %s' ),
-			/* translators: Plugin/Theme name and version */
-			'installingLabel'           => __( 'Installing %s...' ), // no ellipsis
-			/* translators: Plugin/Theme name and version */
-			'installedLabel'            => __( '%s installed!' ),
-			/* translators: Plugin/Theme name and version */
-			'installFailedLabel'        => __( '%s installation failed' ),
-			'installingMsg'             => __( 'Installing... please wait.' ),
-			'installedMsg'              => __( 'Installation completed successfully.' ),
-			'aysDelete'                 => __( 'Are you sure you want to delete this plugin?' ),
-			'deletinggMsg'              => __( 'Deleting... please wait.' ),
-			'deletedMsg'                => __( 'Plugin successfully deleted.' ),
-			'updatedPluginsMsg'         => __( 'Plugin updates complete.' ),
-			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-			'updatedPluginsSuccessMsg'  => __( 'Successes: %d.' ),
-			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-			'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
-			/* translators: 1. Total plugins to update. */
-			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
-			'updateQueued'              => __( 'Update queued.' ),
+		wp_dequeue_script( 'updates' );
+		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'jquery', 'wp-util', 'wp-a11y' ), null, true );
+		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
+			'ajax_nonce' => wp_create_nonce( 'updates' ),
+			'l10n'       => array(
+				'updating'                  => __( 'Updating...' ), // No ellipsis.
+				'updated'                   => __( 'Updated!' ),
+				'updateFailedShort'         => __( 'Update Failed!' ),
+				/* translators: Error string for a failed update */
+				'updateFailed'              => __( 'Update Failed: %s' ),
+				/* translators: Plugin name and version */
+				'updatingLabel'             => __( 'Updating %s...' ), // No ellipsis.
+				/* translators: Plugin name and version */
+				'updatedLabel'              => __( '%s updated!' ),
+				/* translators: Plugin name and version */
+				'updateFailedLabel'         => __( '%s update failed' ),
+				/* translators: JavaScript accessible string */
+				'updatingMsg'               => __( 'Updating... please wait.' ), // No ellipsis.
+				/* translators: JavaScript accessible string */
+				'updatedMsg'                => __( 'Update completed successfully.' ),
+				/* translators: JavaScript accessible string */
+				'updateCancel'              => __( 'Update canceled.' ),
+				'beforeunload'              => __( 'Plugin updates may not complete if you navigate away from this page.' ),
+				'installNow'                => __( 'Install Now' ),
+				'installing'                => __( 'Installing...' ),
+				'installed'                 => __( 'Installed!' ),
+				'installFailedShort'        => __( 'Install Failed!' ),
+				/* translators: Error string for a failed installation. */
+				'installFailed'             => __( 'Installation failed: %s' ),
+				/* translators: Plugin/Theme name and version */
+				'installingLabel'           => __( 'Installing %s...' ), // no ellipsis
+				/* translators: Plugin/Theme name and version */
+				'installedLabel'            => __( '%s installed!' ),
+				/* translators: Plugin/Theme name and version */
+				'installFailedLabel'        => __( '%s installation failed' ),
+				'installingMsg'             => __( 'Installing... please wait.' ),
+				'installedMsg'              => __( 'Installation completed successfully.' ),
+				'aysDelete'                 => __( 'Are you sure you want to delete this plugin?' ),
+				'deletinggMsg'              => __( 'Deleting... please wait.' ),
+				'deletedMsg'                => __( 'Plugin successfully deleted.' ),
+				'updatedPluginsMsg'         => __( 'Plugin updates complete.' ),
+				/* translators: 1. Plugins update successes. 2. Plugin update failures. */
+				'updatedPluginsSuccessMsg'  => __( 'Successes: %d.' ),
+				/* translators: 1. Plugins update successes. 2. Plugin update failures. */
+				'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
+				/* translators: 1. Total plugins to update. */
+				'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
+				'updateQueued'              => __( 'Update queued.' ),
+			),
 		) );
 
 		if ( in_array( $hook, array( 'themes.php', 'theme-install.php' ), true ) ) {
