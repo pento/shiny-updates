@@ -41,12 +41,9 @@ class Shiny_Updates {
 		// Search plugins.
 		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
 		add_action( 'wp_ajax_search-install-plugins', 'wp_ajax_search_install_plugins' );
-<<<<<<< HEAD
 
 		// Plugin updates.
 		add_action( 'wp_ajax_update-plugin', array( $this, 'update_plugin' ), -1 );
-=======
->>>>>>> origin/features/shiny-plugin-search
 
 		// Plugin deletions.
 		add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
@@ -116,7 +113,6 @@ class Shiny_Updates {
 
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
-<<<<<<< HEAD
 		wp_dequeue_script( 'updates' );
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'jquery', 'wp-util', 'wp-a11y' ), null, true );
 		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
@@ -166,36 +162,6 @@ class Shiny_Updates {
 				'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
 				'updateQueued'              => __( 'Update queued.' ),
 			),
-=======
-		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'updates' ), null, true );
-		wp_localize_script( 'shiny-updates', 'shinyUpdates', array(
-			'installNow'                => __( 'Install Now' ),
-			'installing'                => __( 'Installing...' ),
-			'installed'                 => __( 'Installed!' ),
-			'installFailedShort'        => __( 'Install Failed!' ),
-			/* translators: Error string for a failed installation. */
-			'installFailed'             => __( 'Installation failed: %s' ),
-			/* translators: Plugin/Theme name and version */
-			'installingLabel'           => __( 'Installing %s...' ), // no ellipsis
-			/* translators: Plugin/Theme name and version */
-			'installedLabel'            => __( '%s installed!' ),
-			/* translators: Plugin/Theme name and version */
-			'installFailedLabel'        => __( '%s installation failed' ),
-			'installingMsg'             => __( 'Installing... please wait.' ),
-			'installedMsg'              => __( 'Installation completed successfully.' ),
-			'aysDelete'                 => __( 'Are you sure you want to delete this plugin?' ),
-			'deletinggMsg'              => __( 'Deleting... please wait.' ),
-			'deletedMsg'                => __( 'Plugin successfully deleted.' ),
-			'updatedPluginsMsg'         => __( 'Plugin updates complete.' ),
-			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-			'updatedPluginsSuccessMsg'  => __( 'Successes: %d.' ),
-			/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-			'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
-			/* translators: 1. Total plugins to update. */
-			'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
-			'updateQueued'              => __( 'Update queued.' ),
-			'searchResults'             => __( 'Search results for &#8220;%s&#8221;' ),
->>>>>>> origin/features/shiny-plugin-search
 		) );
 
 		if ( 'theme-install.php' === $hook || ( 'themes.php' === $hook && ! is_network_admin() ) ) {
