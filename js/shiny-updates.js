@@ -1283,10 +1283,40 @@ window.wp = window.wp || {};
 			} );
 		} );
 
-		$( '#plugin-search-input' ).on( 'keyup search', function() {
+		/**
+		 * Handle changes to the plugin search box on the new-plugin page,
+		 * searching the repository dynamically.
+		 *
+		 * @todo Add a spinner during search?
+		 */
+		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
 			var data = {
-					'_ajax_nonce': wp.updates.ajaxNonce,
-					's':           $( this ).val()
+					_ajax_nonce: wp.updates.ajaxNonce,
+					s:           $( this ).val(),
+					tab:         'search',
+					type:        $( '#typeselector' ).val()
+				};
+
+			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
+				wp.updates.searchRequest.abort();
+			}
+
+			wp.updates.searchRequest = wp.ajax.post( 'search-install-plugins', data ).done( function( response ) {
+				$theList.empty().append( response.items );
+				delete wp.updates.searchRequest;
+			});
+		}, 250 ) );
+
+		/**
+		 * Handle changes to the plugin search box on the Installed Plugins screen,
+		 * searching the plugin list dynamically.
+		 *
+		 * @todo Add a spinner during search?
+		 */
+		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
+			var data = {
+					_ajax_nonce: wp.updates.ajaxNonce,
+					s:           $( this ).val()
 				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
@@ -1294,10 +1324,30 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.searchRequest = wp.ajax.post( 'search-plugins', data ).done( function( response ) {
-				$theList.empty().append( response.items );
+
+				// Can we just ditch this whole subtitle business?
+				var $subTitle    = $( '<span />' ).addClass( 'subtitle' ).text( wp.updates.l10n.searchResults.replace( '%s', data.s ) ),
+					$oldSubTitle = $( '.wrap .subtitle' );
+
+				if ( 0 === data.s.length ) {
+					$oldSubTitle.remove();
+				} else if ( $oldSubTitle.length ) {
+					$oldSubTitle.replaceWith( $subTitle );
+				} else {
+					$( '.wrap h1' ).append( $subTitle );
+				}
+
+				$( '#bulk-action-form' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
-			} );
-		} );
+			});
+		}, 250 ) );
+
+		/**
+		 * Trigger a search event when the search type gets changed.
+		 */
+		$( '#typeselector' ).on( 'change', function() {
+			$( 'input.wp-filter-search' ).trigger( 'search' );
+		});
 	} );
 
 	/**

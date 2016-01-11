@@ -40,6 +40,7 @@ class Shiny_Updates {
 
 		// Search plugins.
 		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
+		add_action( 'wp_ajax_search-install-plugins', 'wp_ajax_search_install_plugins' );
 
 		// Plugin updates.
 		add_action( 'wp_ajax_update-plugin', array( $this, 'update_plugin' ), -1 );
@@ -737,7 +738,6 @@ function wp_ajax_install_plugin() {
 	wp_send_json_success( $status );
 }
 
-
 /**
  * Ajax handler for searching plugins.
  *
@@ -760,10 +760,47 @@ function wp_ajax_search_plugins() {
 		wp_send_json_error( $status );
 	}
 
+	// Set the correct requester, so pagination works.
+	$_SERVER['REQUEST_URI'] = add_query_arg( array_diff_key( $_POST, array( '_ajax_nonce' => null, 'action' => null ) ), '/wp-admin/plugins.php' );
+
 	$wp_list_table->prepare_items();
 
 	ob_start();
-	$wp_list_table->display_rows_or_placeholder();
+	$wp_list_table->display();
+	$status['items'] = ob_get_clean();
+
+	wp_send_json_success( $status );
+}
+
+/**
+ * Ajax handler for searching plugins to install.
+ *
+ * @since 4.5.0
+ *
+ * @global WP_List_Table $wp_list_table
+ * @global string        $hook_suffix
+ */
+function wp_ajax_search_install_plugins() {
+	check_ajax_referer( 'updates' );
+
+	global $wp_list_table, $hook_suffix;
+	$hook_suffix = 'plugin-install.php';
+
+	$status        = array();
+	$wp_list_table = _get_list_table( 'WP_Plugin_Install_List_Table' );
+
+	if ( ! $wp_list_table->ajax_user_can() ) {
+		$status['error'] = __( 'You do not have sufficient permissions to manage plugins on this site.' );
+		wp_send_json_error( $status );
+	}
+
+	// Set the correct requester, so pagination works.
+	$_SERVER['REQUEST_URI'] = add_query_arg( array_diff_key( $_POST, array( '_ajax_nonce' => null, 'action' => null ) ), '/wp-admin/plugin-install.php' );
+
+	$wp_list_table->prepare_items();
+
+	ob_start();
+	$wp_list_table->display();
 	$status['items'] = ob_get_clean();
 
 	wp_send_json_success( $status );
