@@ -1291,10 +1291,10 @@ window.wp = window.wp || {};
 		 */
 		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
 			var data = {
-					'_ajax_nonce': wp.updates.ajaxNonce,
-					's':           $( this ).val(),
-					'tab':         'search',
-					'type':        $( '#typeselector' ).val()
+					_ajax_nonce: wp.updates.ajaxNonce,
+					s:           $( this ).val(),
+					tab:         'search',
+					type:        $( '#typeselector' ).val()
 				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
@@ -1315,8 +1315,8 @@ window.wp = window.wp || {};
 		 */
 		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
 			var data = {
-					'_ajax_nonce': wp.updates.ajaxNonce,
-					's':           $( this ).val()
+					_ajax_nonce: wp.updates.ajaxNonce,
+					s:           $( this ).val()
 				};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
