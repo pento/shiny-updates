@@ -251,7 +251,7 @@ window.wp = window.wp || {};
 		var $pluginRow, $updateMessage, newText;
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-			$pluginRow     = $( 'tr[data-plugin="' + response.plugin + '"]' ).first();
+			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' ).first();
 			$updateMessage = $pluginRow.next().find( '.update-message' );
 			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
@@ -616,7 +616,13 @@ window.wp = window.wp || {};
 	 * @param {string} slug
 	 */
 	wp.updates.updateTheme = function( slug ) {
-		var $message = $( '#update-theme' ).closest( '.notice' );
+		var $message;
+
+		if ( 'themes-network' === pagenow ) {
+			$message = $( '#' + slug + ' ~ .plugin-update-tr' ).find( '.update-message' );
+		} else {
+			$message = $( '#update-theme' ).closest( '.notice' );
+		}
 
 		$message.addClass( 'updating-message' );
 		if ( $message.html() !== wp.updates.l10n.updating ) {
@@ -642,15 +648,22 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateThemeSuccess = function( response ) {
-		var $message = $( '.theme-info .notice' );
+		var $message, newText, $themeRow = $( '#' + response.slug );
+
+		if ( 'themes-network' === pagenow ) {
+			$message = $( '#' + response.slug + ' ~ .plugin-update-tr' ).find( '.update-message' );
+
+			// Update the version number in the row.
+			newText = $themeRow.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
+			$themeRow.find( '.theme-version-author-uri' ).html( newText );
+		} else {
+			$message = $( '.theme-info .notice' );
+			$( '.theme-version' ).text( response.newVersion );
+		}
 
 		$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
 		$message.text( wp.updates.l10n.updated );
-		$( '#' + response.slug ).find( '.theme-update' ).remove();
-
-		if ( response.newVersion.length ) {
-			$( '.theme-version' ).text( response.newVersion );
-		}
+		$themeRow.find( '.theme-update' ).remove();
 
 		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
 
@@ -668,11 +681,15 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateThemeError = function( response ) {
-		var $message = $( '.theme-info .notice' ),
-			errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+		var $message, errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
 
-		$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
-		$message.text( errorMessage );
+		if ( 'themes-network' === pagenow ) {
+			$message = $( '#' + response.slug + ' ~ .plugin-update-tr' ).find( '.update-message' );
+		} else {
+			$message = $( '.theme-info .notice' ).removeClass( 'notice-warning' ).addClass( 'notice-error is-dismissible' );
+		}
+
+		$message.text( errorMessage ).removeClass( 'updating-message' );
 		wp.a11y.speak( errorMessage, 'polite' );
 
 		$document.trigger( 'wp-theme-update-error', response );
@@ -784,15 +801,25 @@ window.wp = window.wp || {};
 	 * On theme delete success, update the UI appropriately.
 	 *
 	 * @since 4.5.0
-	 ** @param {object} response
+	 *
+	 * @param {object} response
 	 */
 	wp.updates.deleteThemeSuccess = function( response ) {
 		wp.a11y.speak( wp.updates.l10n.deletedMsg, 'polite' );
 
 		$document.trigger( 'wp-delete-theme-success', response );
 
-		// Back to themes overview.
-		window.location = location.pathname;
+		if ( 'themes-network' === pagenow ) {
+
+			// Removes the theme and updates rows.
+			$( '#' + response.slug + '-update, #' + response.slug ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+				$( this ).remove();
+			} );
+		} else {
+
+			// Back to themes overview.
+			window.location = location.pathname;
+		}
 	};
 
 	/**
@@ -1129,6 +1156,40 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.deletePlugin( $link.data( 'plugin' ), $link.data( 'slug' ) );
+		} );
+
+		/**
+		 * Update a theme.
+		 */
+		$document.on( 'click', '.themes-php.network-admin a[href*="upgrade-theme"]', function( event ) {
+			var $link = $( event.target ).parents( 'tr' ).prev();
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			// Return the user to the input box of the plugin's table row after closing the modal.
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $( '#' + $link.attr( 'id' ) ).find( '.check-column input' );
+			wp.updates.updateTheme( $link.attr( 'id' ) );
+		} );
+
+		/**
+		 * Delete a theme.
+		 */
+		$document.on( 'click', '.themes-php.network-admin a.delete', function( event ) {
+			var $link = $( event.target ).parents( 'tr' ).prev();
+			event.preventDefault();
+
+			if ( ! window.confirm( wp.updates.l10n.aysDelete ) ) {
+				return;
+			}
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			wp.updates.deleteTheme( $link.attr( 'id' ) );
 		} );
 
 		/**
