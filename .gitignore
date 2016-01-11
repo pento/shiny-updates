@@ -1,0 +1,4 @@
+# gitignore file for Shiny Updates
+
+# Files and folders related to build/test tools.
+node_modules
