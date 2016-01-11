@@ -1194,9 +1194,13 @@ window.wp = window.wp || {};
 
 		/**
 		 * Bulk update for plugins.
+		 *
+		 * @since 4.5.0
+		 *
+		 * @param Event Event interface
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
-			var plugins;
+			var plugins = [];
 
 			if ( 'update-selected' !== $( event.target ).siblings( 'select' ).val() ) {
 				return;
@@ -1206,31 +1210,31 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			plugins = [];
 			event.preventDefault();
 
 			// Un-check the bulk checkboxes.
-			$( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
+			$theList.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
 			// Find all the checkboxes which have been checked.
 			$bulkActionForm
 				.find( 'input[name="checked[]"]:checked' )
 				.each( function( index, element ) {
-					var $checkbox = $( element );
+					var $checkbox  = $( element ),
+						$pluginRow = $checkbox.parents( 'tr' );
 
 					// Un-check the box.
 					$checkbox.prop( 'checked', false );
 
-					// Only add updatable plugins to the queue.
-					if ( $checkbox.parents( 'tr' ).hasClass( 'update' ) ) {
+					// Only add update-able plugins to the queue.
+					if ( $pluginRow.hasClass( 'update' ) ) {
 						plugins.push( {
-							plugin: $checkbox.val(),
-							slug:   $checkbox.parents( 'tr' ).prop( 'id' )
+							plugin: $pluginRow.data( 'plugin' ),
+							slug:   $pluginRow.data( 'slug' )
 						} );
 					}
 			} );
 
-			if ( 0 !== plugins.length ) {
+			if ( plugins.length ) {
 				wp.updates.bulkUpdatePlugins( plugins );
 			}
 		} );
