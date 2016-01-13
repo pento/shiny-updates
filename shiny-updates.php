@@ -1,8 +1,10 @@
 <?php
 /**
  * Plugin Name: Shiny Updates
- * Description: Hide the ugly parts of updating WordPress.
+ * Plugin URI: https://github.com/obenland/shiny-updates
+ * Description: A smoother experience for managing plugins and themes.
  * Author: the WordPress team
+ * Author URI: https://github.com/obenland/shiny-updates
  * Version: 2
  * License: GPL2
  *
