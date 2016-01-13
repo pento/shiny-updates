@@ -104,9 +104,9 @@ add_action( 'core_upgrade_preamble', 'shiny_auto_updates_render' );
 function shiny_network_auto_updates() {
 	check_admin_referer( 'shiny_auto_updates-options' );
 
-	update_site_option( 'wp_auto_update_core',    isset( $_REQUEST['wp_auto_update_core']    ) );
+	update_site_option( 'wp_auto_update_core',    isset( $_REQUEST['wp_auto_update_core'] ) );
 	update_site_option( 'wp_auto_update_plugins', isset( $_REQUEST['wp_auto_update_plugins'] ) );
-	update_site_option( 'wp_auto_update_themes',  isset( $_REQUEST['wp_auto_update_themes']  ) );
+	update_site_option( 'wp_auto_update_themes',  isset( $_REQUEST['wp_auto_update_themes'] ) );
 
 	wp_redirect( add_query_arg( array( 'settings-updated' => 'true' ), network_admin_url( 'update-core.php' ) ) );
 	exit;
