@@ -7,7 +7,7 @@ module.exports = function(grunt) {
 		jshint: {
 			files: [
 				'Gruntfile.js',
-				'js/**/*.js',
+				'src/**/*.js',
 				'tests/**/*.js',
 				'!tests/vendor/**'
 			],
@@ -15,7 +15,7 @@ module.exports = function(grunt) {
 		},
 		jscs: {
 			src: [
-				'js/**/*.js',
+				'src/**/*.js',
 				'tests/**/*.js',
 				'!tests/vendor/**'
 			],
@@ -25,13 +25,7 @@ module.exports = function(grunt) {
 			}
 		},
 		phpcs: {
-			files: [
-				'**/*.php',
-				'!node_modules/**',
-				'!phpccs/**',
-				'!phpcs/**',
-				'!wpcs/**'
-			],
+			files: 'src/**/*.php',
 			options: {
 				bin: 'phpcs/scripts/phpcs',
 				verbose: true,
