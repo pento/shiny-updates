@@ -93,7 +93,7 @@ window.wp = window.wp || {};
 	/**
 	 * Handles Ajax requests to WordPress.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {string} action The type of Ajax request ('update-plugin', 'install-theme', etc).
 	 * @param {object} data   Data that needs to be passed to the ajax callback.
@@ -128,7 +128,7 @@ window.wp = window.wp || {};
 	/**
 	 * Actions performed after every Ajax request.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -201,8 +201,8 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @param {string} plugin
-	 * @param {string} slug
+	 * @param {string} plugin Plugin basename
+	 * @param {string} slug   Plugin slug
 	 */
 	wp.updates.updatePlugin = function( plugin, slug ) {
 		var $updateRow, $card, $message, message;
@@ -329,13 +329,13 @@ window.wp = window.wp || {};
 
 	/**
 	 * Set up the progress indicator.
+	 *
+	 * @since 4.X.0
 	 */
 	wp.updates.setupProgressIndicator = function() {
 		var $progressTemplate;
 
-		/**
-		 * Only set up the progress updater once.
-		 */
+		// Only set up the progress updater once.
 		if ( ! _.isUndefined( wp.updates.progressUpdates ) ) {
 			return;
 		}
@@ -344,9 +344,7 @@ window.wp = window.wp || {};
 		wp.updates.messageLock  = false;
 		wp.updates.messageQueue = [];
 
-		/**
-		 * Set up the notifcation template.
-		 */
+		// Set up the notification template.
 		$progressTemplate = $( '#tmpl-wp-progress-template' );
 		if ( 0 !== $progressTemplate.length ) {
 			wp.updates.progressTemplate = wp.template( 'wp-progress-template' );
@@ -358,8 +356,10 @@ window.wp = window.wp || {};
 	/**
 	 * Update the progress indicator with a new message.
 	 *
-	 * @param {String}  message A string to display in the prigress indicator.
-	 * @param {boolean} isError Whether the message indicates an error.
+	 * @since 4.X.0
+	 *
+	 * @param {String}  message      A string to display in the progress indicator.
+	 * @param {boolean} messageClass Whether the message indicates an error.
 	 */
 	wp.updates.updateProgressMessage = function( message, messageClass ) {
 
@@ -374,6 +374,8 @@ window.wp = window.wp || {};
 
 	/**
 	 * Process the message queue, showing messages in a throttled manner.
+	 *
+	 * @since 4.X.0
 	 */
 	wp.updates.processMessageQueue = function() {
 		var queuedMessage;
@@ -393,16 +395,14 @@ window.wp = window.wp || {};
 
 				// Update the progress message.
 				wp.updates.progressUpdates.append(
-					wp.updates.progressTemplate(
-						{
-							message: queuedMessage.message,
-							noticeClass: _.isUndefined( queuedMessage.messageClass ) ? 'notice-success' : 'notice-error'
-						}
-					)
+					wp.updates.progressTemplate( {
+						message: queuedMessage.message,
+						noticeClass: _.isUndefined( queuedMessage.messageClass ) ? 'notice-success' : 'notice-error'
+					} )
 				);
 				wp.a11y.speak( wp.updates.l10n.updatingMsg, 'notice-error' === queuedMessage.messageClass ? 'assertive' : 'polite' );
 
-				$( document ).trigger( 'wp-progress-updated' );
+				$document.trigger( 'wp-progress-updated' );
 
 				// After a brief delay, unlock and call the queue again.
 				setTimeout( function() {
@@ -416,7 +416,7 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to update plugins in bulk.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
 		var $message;
@@ -448,6 +448,8 @@ window.wp = window.wp || {};
 
 	/**
 	 * Build a string describing the bulk update progress.
+	 *
+	 * @since 4.X.0
 	 */
 	wp.updates.getPluginUpdateProgress = function() {
 		var updateMessage = wp.updates.l10n.updatePluginsQueuedMsg.replace( '%d', wp.updates.pluginsToUpdateCount );
@@ -466,9 +468,9 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to install a plugin.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
-	 * @param {string} slug
+	 * @param {string} slug Plugin identifier in the WordPress.org Plugin repository.
 	 */
 	wp.updates.installPlugin = function( slug ) {
 		var $card    = $( '.plugin-card-' + slug ),
@@ -489,7 +491,7 @@ window.wp = window.wp || {};
 	/**
 	 * On plugin install success, update the UI with the result.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -507,7 +509,7 @@ window.wp = window.wp || {};
 	/**
 	 * On plugin install failure, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -551,10 +553,10 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to delete a plugin.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
-	 * @param {string} plugin
-	 * @param {string} slug
+	 * @param {string} plugin Plugin basename
+	 * @param {string} slug   Plugin slug
 	 */
 	wp.updates.deletePlugin = function( plugin, slug ) {
 		wp.a11y.speak( wp.updates.l10n.deletinggMsg, 'polite' );
@@ -567,7 +569,7 @@ window.wp = window.wp || {};
 	/**
 	 * On plugin delete success, update the UI with the result.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -593,7 +595,7 @@ window.wp = window.wp || {};
 	/**
 	 * On plugin delete failure, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -611,9 +613,9 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to update a theme.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
-	 * @param {string} slug
+	 * @param {string} slug Theme stylesheet.
 	 */
 	wp.updates.updateTheme = function( slug ) {
 		var $message;
@@ -643,7 +645,7 @@ window.wp = window.wp || {};
 	/**
 	 * On a successful theme update, update the UI with the result.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -676,7 +678,7 @@ window.wp = window.wp || {};
 	/**
 	 * On a theme update error, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -698,9 +700,9 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to install a theme.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
-	 * @param {string} slug
+	 * @param {string} slug Theme stylesheet.
 	 */
 	wp.updates.installTheme = function( slug ) {
 		var $message = $( '.theme-install[data-slug="' + slug + '"]' );
@@ -724,8 +726,9 @@ window.wp = window.wp || {};
 	/**
 	 * On theme install success, update the UI with the result.
 	 *
-	 * @since 4.5.0
-	 ** @param {object} response
+	 * @since 4.X.0
+	 *
+	 * @param {object} response
 	 */
 	wp.updates.installThemeSuccess = function( response ) {
 		var $card = $( '#' + response.slug ),
@@ -742,7 +745,7 @@ window.wp = window.wp || {};
 	/**
 	 * On theme install failure, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -774,9 +777,9 @@ window.wp = window.wp || {};
 	/**
 	 * Send an Ajax request to the server to install a theme.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
-	 * @param {string} slug
+	 * @param {string} slug Theme stylesheet.
 	 */
 	wp.updates.deleteTheme = function( slug ) {
 		var $message = $( '.theme-install[data-slug="' + slug + '"]' );
@@ -800,7 +803,7 @@ window.wp = window.wp || {};
 	/**
 	 * On theme delete success, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
 	 *
 	 * @param {object} response
 	 */
@@ -825,13 +828,12 @@ window.wp = window.wp || {};
 	/**
 	 * On theme delete failure, update the UI appropriately.
 	 *
-	 * @since 4.5.0
+	 * @since 4.X.0
+	 * @todo fix/test this section
 	 *
 	 * @param {object} response
 	 */
 	wp.updates.deleteThemeError = function( response ) {
-
-		// @todo fix/test this section
 		var $card, $button,
 			errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error );
 
@@ -859,15 +861,15 @@ window.wp = window.wp || {};
 	/**
 	 * Show an error message in the request for credentials form.
 	 *
-	 * @param {string} message
 	 * @since 4.2.0
+	 *
+	 * @param {string} message Error message.
 	 */
 	wp.updates.showErrorInCredentialsForm = function( message ) {
 		var $modal = $( '.notification-dialog' );
 
 		// Remove any existing error.
 		$modal.find( '.error' ).remove();
-
 		$modal.find( 'h3' ).after( '<div class="error">' + message + '</div>' );
 	};
 
@@ -875,6 +877,9 @@ window.wp = window.wp || {};
 	 * Events that need to happen when there is a credential error.
 	 *
 	 * @since 4.2.0
+	 *
+	 * @param {object} response Ajax response.
+	 * @param {string} type     The type of action.
 	 */
 	wp.updates.credentialError = function( response, type ) {
 		wp.updates.updateQueue.push( {
@@ -896,7 +901,7 @@ window.wp = window.wp || {};
 	 * If an install/update job has been placed in the queue, queueChecker pulls it out and runs it.
 	 *
 	 * @since 4.2.0
-	 * @since 4.5.0 Can handle multiple job types.
+	 * @since 4.X.0 Can handle multiple job types.
 	 */
 	wp.updates.queueChecker = function() {
 		var job;
@@ -943,6 +948,8 @@ window.wp = window.wp || {};
 	 * Request the users filesystem credentials if we don't have them already.
 	 *
 	 * @since 4.2.0
+	 *
+	 * @param {Event} event Event interface.
 	 */
 	wp.updates.requestFilesystemCredentials = function( event ) {
 		if ( false === wp.updates.updateDoneSuccessfully ) {
@@ -967,6 +974,8 @@ window.wp = window.wp || {};
 	 * Constrain keyboard navigation to inside the modal.
 	 *
 	 * @since 4.2.0
+	 *
+	 * @param {Event} event Event interface.
 	 */
 	wp.updates.keydown = function( event ) {
 		if ( 27 === event.keyCode ) {
@@ -1014,7 +1023,7 @@ window.wp = window.wp || {};
 	 * The steps that need to happen when the modal is canceled out
 	 *
 	 * @since 4.2.0
-	 * @since 4.5.0 Triggers an event for callbacks to listen to and add their actions.
+	 * @since 4.X.0 Triggers an event for callbacks to listen to and add their actions.
 	 */
 	wp.updates.requestForCredentialsModalCancel = function() {
 
@@ -1059,7 +1068,11 @@ window.wp = window.wp || {};
 		 */
 		wp.updates.shouldRequestFilesystemCredentials = $filesystemModal.length > 0 ;
 
-		// File system credentials form submit noop-er / handler.
+		/**
+		 * File system credentials form submit noop-er / handler.
+		 *
+		 * @since 4.2.0
+		 */
 		$filesystemModal.on( 'submit', 'form', function() {
 
 			// Persist the credentials input by the user for the duration of the page load.
@@ -1079,17 +1092,31 @@ window.wp = window.wp || {};
 			return false;
 		});
 
-		// Close the request credentials modal when.
+		/**
+		 * Close the request credentials modal when.
+		 *
+		 * @since 4.2.0
+		 */
 		$( '#request-filesystem-credentials-dialog [data-js-action="close"], .notification-dialog-background' ).on( 'click', function() {
 			wp.updates.requestForCredentialsModalCancel();
 		});
 
-		// Hide SSH fields when not selected.
+		/**
+		 * Hide SSH fields when not selected.
+		 *
+		 * @since 4.2.0
+		 */
 		$filesystemModal.on( 'change', 'input[name="connection_type"]', function() {
 			$( this ).parents( 'form' ).find( '#private_key, #public_key' ).parents( 'label' ).toggle( ( 'ssh' === $( this ).val() ) );
 		}).change();
 
-		// Click handler for plugin updates in List Table view.
+		/**
+		 * Click handler for plugin updates in List Table view.
+		 *
+		 * @since 4.2.0
+		 *
+		 * @param {Event} event Event interface.
+ 		 */
 		$( '.plugin-update-tr' ).on( 'click', '.update-link', function( event ) {
 			var $updateRow = $( event.target ).parents( '.plugin-update-tr' );
 			event.preventDefault();
@@ -1103,6 +1130,13 @@ window.wp = window.wp || {};
 			wp.updates.updatePlugin( $updateRow.data( 'plugin' ), $updateRow.data( 'slug' ) );
 		} );
 
+		/**
+		 * Click handler for plugin updates in plugin install view.
+		 *
+		 * @since 4.2.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
 		$( '.plugin-card' ).on( 'click', '.update-now', function( event ) {
 			var $button = $( event.target );
 			event.preventDefault();
@@ -1116,6 +1150,10 @@ window.wp = window.wp || {};
 
 		/**
 		 * Install a plugin.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
 		 */
 		$theList.on( 'click', '.install-now', function( event ) {
 			var $button = $( event.target );
@@ -1142,6 +1180,10 @@ window.wp = window.wp || {};
 
 		/**
 		 * Delete a plugin.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
 		 */
 		$theList.on( 'click', 'a.delete', function( event ) {
 			var $link = $( event.target );
@@ -1160,6 +1202,10 @@ window.wp = window.wp || {};
 
 		/**
 		 * Update a theme.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin a[href*="upgrade-theme"]', function( event ) {
 			var $link = $( event.target ).parents( 'tr' ).prev();
@@ -1176,6 +1222,10 @@ window.wp = window.wp || {};
 
 		/**
 		 * Delete a theme.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin a.delete', function( event ) {
 			var $link = $( event.target ).parents( 'tr' ).prev();
@@ -1195,9 +1245,9 @@ window.wp = window.wp || {};
 		/**
 		 * Bulk update for plugins.
 		 *
-		 * @since 4.5.0
+		 * @since 4.X.0
 		 *
-		 * @param Event Event interface
+		 * @param {Event} event Event interface.
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
 			var plugins = [];
@@ -1241,6 +1291,8 @@ window.wp = window.wp || {};
 
 		/**
 		 * Handle events after the credential modal was closed.
+		 *
+		 * @since 4.X.0
 		 */
 		$document.on( 'credential-modal-cancel', function() {
 			var slug, $message;
@@ -1261,6 +1313,8 @@ window.wp = window.wp || {};
 
 		/**
 		 * Make notices dismissible.
+		 *
+		 * @since 4.X.0
  		 */
 		$document.on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
@@ -1287,6 +1341,8 @@ window.wp = window.wp || {};
 		 * Handle changes to the plugin search box on the new-plugin page,
 		 * searching the repository dynamically.
 		 *
+		 * @since 4.X.0
+		 *
 		 * @todo Add a spinner during search?
 		 */
 		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
@@ -1310,6 +1366,8 @@ window.wp = window.wp || {};
 		/**
 		 * Handle changes to the plugin search box on the Installed Plugins screen,
 		 * searching the plugin list dynamically.
+		 *
+		 * @since 4.X.0
 		 *
 		 * @todo Add a spinner during search?
 		 */
@@ -1344,6 +1402,8 @@ window.wp = window.wp || {};
 
 		/**
 		 * Trigger a search event when the search type gets changed.
+		 *
+		 * @since 4.X.0
 		 */
 		$( '#typeselector' ).on( 'change', function() {
 			$( 'input.wp-filter-search' ).trigger( 'search' );
@@ -1354,6 +1414,8 @@ window.wp = window.wp || {};
 	 * Update plugin from the details modal on `plugin-install.php`.
 	 *
 	 * @since 4.2.0
+	 *
+	 * @param {Event} event Event interface.
 	 */
 	$( '#plugin_update_from_iframe' ).on( 'click', function( event ) {
 		var target = window.parent === window ? null : window.parent,
@@ -1383,7 +1445,9 @@ window.wp = window.wp || {};
 	 * Handles postMessage events.
 	 *
 	 * @since 4.2.0
-	 * @since 4.5.0 Switched `update-plugin` action to use the updateQueue.
+	 * @since 4.X.0 Switched `update-plugin` action to use the updateQueue.
+	 *
+	 * @param {Event} event Event interface.
 	 */
 	$( window ).on( 'message', function( event ) {
 		var originalEvent  = event.originalEvent,
@@ -1420,6 +1484,11 @@ window.wp = window.wp || {};
 		}
 	} );
 
+	/**
+	 * Adds a callback to display a warning before leaving the page.
+	 *
+	 * @since 4.2.0
+	 */
 	$( window ).on( 'beforeunload', wp.updates.beforeunload );
 
 } )( jQuery, window.wp );
