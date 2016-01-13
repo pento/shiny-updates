@@ -83,15 +83,32 @@ function shiny_auto_updates_checkbox_field( $args ) {
 	<?php endif;
 }
 
-
 /**
  * Renders the auto update settings.
  */
 function shiny_auto_updates_render() {
-	echo '<form method="post" action="options.php">';
+	$action = is_network_admin() ? 'update-core.php?action=auto-updates' : 'options.php';
+	printf( '<form method="post" action="%s">', esc_url( $action ) );
 		settings_fields( 'shiny_auto_updates' );
 		do_settings_sections( 'shiny_auto_updates' );
 		submit_button();
 	echo '</form>';
 }
 add_action( 'core_upgrade_preamble', 'shiny_auto_updates_render' );
+
+/**
+ * Handles settings sanitation and saving in multisite.
+ *
+ * @since 4.X.0
+ */
+function shiny_network_auto_updates() {
+	check_admin_referer( 'shiny_auto_updates-options' );
+
+	update_site_option( 'wp_auto_update_core',    isset( $_REQUEST['wp_auto_update_core'] ) );
+	update_site_option( 'wp_auto_update_plugins', isset( $_REQUEST['wp_auto_update_plugins'] ) );
+	update_site_option( 'wp_auto_update_themes',  isset( $_REQUEST['wp_auto_update_themes'] ) );
+
+	wp_redirect( add_query_arg( array( 'settings-updated' => 'true' ), network_admin_url( 'update-core.php' ) ) );
+	exit;
+}
+add_action( 'update-core-custom_auto-updates', 'shiny_network_auto_updates' );
