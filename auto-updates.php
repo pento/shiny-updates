@@ -75,7 +75,7 @@ function shiny_auto_updates_description() {
 function shiny_auto_updates_checkbox_field( $args ) {
 	?>
 	<label for="<?php echo esc_attr( $args['label_for'] ); ?>">
-		<input type="checkbox" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( $args['label_for'] ); ?>" value="1" <?php checked( get_option( $args['label_for'], false ) ); ?> />
+		<input type="checkbox" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( $args['label_for'] ); ?>" value="1" <?php checked( get_site_option( $args['label_for'], false ) ); ?> />
 		<?php echo esc_html( $args['label'] ); ?>
 	</label>
 	<?php if ( ! empty( $args['description'] ) ) : ?>
