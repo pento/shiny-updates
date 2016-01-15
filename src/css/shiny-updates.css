@@ -23,10 +23,6 @@
 	content: '\f147';
 }
 
-.plugin-update-tr .update-message.update-error-message:before {
-	content: "\f158";
-}
-
 .theme-install-php .theme .notice-error {
 	display: block;
 	left: 0;
@@ -59,4 +55,49 @@
 	speak: none;
 	margin: 0 8px 0 -2px;
 	vertical-align: top;
+}
+
+/* Inline notifications */
+
+.update-message {
+	background-color: #f7f7f7;
+	background-color: rgba(0,0,0,0.03);
+	padding-left: 40px;
+}
+
+.column-description .update-message p {
+	margin: 0.5em 0;
+	padding: 2px;
+}
+
+.update-message p:before {
+	color: #d54e21;
+	display: inline-block;
+	font: normal 20px/1 dashicons;
+	content: "\f463";
+	margin: 0 10px 0 -30px;
+	speak: none;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	vertical-align: top;
+}
+
+.updating-message p:before {
+	content: "\f463";
+	-webkit-animation: rotation 2s infinite linear;
+	animation: rotation 2s infinite linear;
+}
+
+.wrap .notice-success p:before {
+	color: #79ba49;
+	content: "\f147";
+}
+
+.wrap .notice-error p:before {
+	content: "\f534";
+}
+
+.plugin-card .update-message p:before {
+	content: '';
+	margin: auto;
 }
