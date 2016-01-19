@@ -152,10 +152,10 @@ window.wp = window.wp || {};
 	 * @param {string} upgradeType
 	 */
 	wp.updates.decrementCount = function( upgradeType ) {
-		var $pluginsMenuItem = $( '#menu-plugins' ),
+		var $menuItem, $itemCount,
 			$adminBarUpdates = $( '#wp-admin-bar-updates' ),
 			$dashboardNavMenuUpdateCount = $( 'a[href="update-core.php"] .update-plugins' ),
-			count, pluginCount;
+			count, itemCount;
 
 		count = $adminBarUpdates.find( '.ab-label' ).text();
 		count = parseInt( count, 10 ) - 1;
@@ -173,27 +173,32 @@ window.wp = window.wp || {};
 
 		switch ( upgradeType ) {
 			case 'plugin':
-				pluginCount = $pluginsMenuItem.find( '.plugin-count' ).eq( 0 ).text();
-				pluginCount = parseInt( pluginCount, 10 ) - 1;
-				if ( pluginCount < 0 || isNaN( pluginCount ) ) {
-					return;
-				}
-
-				if ( pluginCount > 0 ) {
-					$( '.subsubsub .upgrade .count' ).text( '(' + pluginCount + ')' );
-
-					$pluginsMenuItem.find( '.plugin-count' ).text( pluginCount );
-					$pluginsMenuItem.find( '.update-plugins' ).each( function( index, elem ) {
-						elem.className = elem.className.replace( /count-\d+/, 'count-' + pluginCount );
-					} );
-				} else {
-					$( '.subsubsub .upgrade' ).remove();
-					$pluginsMenuItem.find( '.update-plugins' ).remove();
-				}
+				$menuItem  = $( '#menu-plugins' );
+				$itemCount = $menuItem.find( '.plugin-count' );
 				break;
 
 			case 'theme':
+				$menuItem  = $( '#menu-appearance' );
+				$itemCount = $menuItem.find( '.theme-count' );
 				break;
+		}
+
+		itemCount = $itemCount.eq( 0 ).text();
+		itemCount = parseInt( itemCount, 10 ) - 1;
+		if ( itemCount < 0 || isNaN( itemCount ) ) {
+			return;
+		}
+
+		if ( itemCount > 0 ) {
+			$( '.subsubsub .upgrade .count' ).text( '(' + itemCount + ')' );
+
+			$itemCount.text( itemCount );
+			$menuItem.find( '.update-plugins' ).each( function( index, element ) {
+				element.className = element.className.replace( /count-\d+/, 'count-' + itemCount );
+			} );
+		} else {
+			$( '.subsubsub .upgrade' ).remove();
+			$menuItem.find( '.update-plugins' ).remove();
 		}
 	};
 
@@ -325,11 +330,6 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
 		var $message;
-
-		// Start the bulk plugin updates. Reset the count for totals, successes and failures.
-		wp.updates.pluginsToUpdateCount  = plugins.length;
-		wp.updates.pluginUpdateSuccesses = 0;
-		wp.updates.pluginUpdateFailures  = 0;
 
 		_.each( plugins, function( plugin ) {
 			$message = $( 'tr[data-plugin="' + plugin.plugin + '"]' ).find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
@@ -495,21 +495,17 @@ window.wp = window.wp || {};
 		var $message;
 
 		if ( 'themes-network' === pagenow ) {
-			$message = $( '#' + slug + ' ~ .plugin-update-tr' ).find( '.update-message' );
+			$message = $( 'tr[data-slug="' + slug + '"]' ).find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
 		} else {
-			$message = $( '#update-theme' ).closest( '.notice' );
+			$message = $( '#update-theme' ).closest( '.notice' ).addClass( 'updating-message' );
 		}
 
-		$message.addClass( 'updating-message' );
 		if ( $message.html() !== wp.updates.l10n.updating ) {
 			$message.data( 'originaltext', $message.html() );
 		}
 
 		$message.text( wp.updates.l10n.updating );
 		wp.a11y.speak( wp.updates.l10n.updatingMsg, 'polite' );
-
-		// Remove previous error messages, if any.
-		$( '#' + slug ).removeClass( 'theme-update-failed' ).find( '.notice.notice-error' ).remove();
 
 		wp.updates.ajax( 'update-theme', { 'slug': slug } )
 			.done( wp.updates.updateThemeSuccess )
@@ -524,23 +520,20 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateThemeSuccess = function( response ) {
-		var $message, newText, $themeRow = $( '#' + response.slug );
+		var $message, newText, $themeRow = $( 'tr[data-slug="' + response.slug + '"]' );
 
 		if ( 'themes-network' === pagenow ) {
-			$message = $( '#' + response.slug + ' ~ .plugin-update-tr' ).find( '.update-message' );
+			$message = $themeRow.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' ).find( 'p' );
 
 			// Update the version number in the row.
 			newText = $themeRow.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
 			$themeRow.find( '.theme-version-author-uri' ).html( newText );
 		} else {
-			$message = $( '.theme-info .notice' );
+			$message = $( '.theme-info .notice' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
 			$( '.theme-version' ).text( response.newVersion );
 		}
 
-		$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
 		$message.text( wp.updates.l10n.updated );
-		$themeRow.find( '.theme-update' ).remove();
-
 		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
 
 		wp.updates.decrementCount( 'theme' );
@@ -564,12 +557,12 @@ window.wp = window.wp || {};
 		}
 
 		if ( 'themes-network' === pagenow ) {
-			$message = $( '#' + response.slug ).find( '.update-message' );
+			$message = $( 'tr[data-slug="' + response.slug + '"]' ).find( '.update-message ' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' ).find( 'p' );
 		} else {
-			$message = $( '.theme-info .notice' ).removeClass( 'notice-warning' ).addClass( 'notice-error is-dismissible' );
+			$message = $( '.theme-info .notice' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
 		}
 
-		$message.text( errorMessage ).removeClass( 'updating-message' );
+		$message.text( errorMessage );
 		wp.a11y.speak( errorMessage, 'polite' );
 
 		$document.trigger( 'wp-theme-update-error', response );
@@ -609,13 +602,13 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.installThemeSuccess = function( response ) {
-		var $card = $( '.wp-full-overlay-header, #' + response.slug ),
+		var $card    = $( '.wp-full-overlay-header, #' + response.slug ),
 			$message = $card.find( '.theme-install' );
 
+		$card.addClass( 'is-installed' ); // Hides the button, should show banner.
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message disabled' );
 		$message.text( wp.updates.l10n.installed );
 		wp.a11y.speak( wp.updates.l10n.installedMsg, 'polite' );
-		$card.addClass( 'is-installed' ); // Hides the button, should show banner.
 
 		$document.trigger( 'wp-install-theme-success', response );
 	};
@@ -982,21 +975,22 @@ window.wp = window.wp || {};
 			$( this ).parents( 'form' ).find( '#private_key, #public_key' ).parents( 'label' ).toggle( ( 'ssh' === $( this ).val() ) );
 		}).change();
 
+		$( '.plugin-update-tr' ).each( function( index, element ) {
+			var $element   = $( element ),
+				$pluginRow = $element.prev();
+
+			$pluginRow.find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-warning notice-alt', message: $element.find( '.update-message' ).html() }) );
+			$element.remove();
+		});
+
 		/**
 		 * Click handler for plugin updates in List Table view.
 		 *
 		 * @since 4.2.0
 		 *
 		 * @param {Event} event Event interface.
- 		 */
-		$( '.plugin-update-tr' ).each( function( index, element ) {
-			var $element   = $( element ),
-				$pluginRow = $element.prev().removeClass( 'update' );
-
-			$pluginRow.find( '.column-description' ).prepend( $element.find( '.update-message' ).addClass( 'notice notice-warning notice-alt' ) );
-		});
-
-		$( '.update-link' ).on( 'click', function( event ) {
+		 */
+		$theList.on( 'click', '[data-plugin] .update-link', function( event ) {
 			var $pluginRow = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
@@ -1064,7 +1058,7 @@ window.wp = window.wp || {};
 		 *
 		 * @param {Event} event Event interface.
 		 */
-		$theList.on( 'click', 'a.delete', function( event ) {
+		$theList.on( 'click', '[data-plugin] a.delete', function( event ) {
 			var $link = $( event.target );
 			event.preventDefault();
 
@@ -1087,16 +1081,16 @@ window.wp = window.wp || {};
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin a[href*="upgrade-theme"]', function( event ) {
-			var $link = $( event.target ).parents( 'tr' ).prev();
+			var $link = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			// Return the user to the input box of the plugin's table row after closing the modal.
-			wp.updates.$elToReturnFocusToFromCredentialsModal = $( '#' + $link.attr( 'id' ) ).find( '.check-column input' );
-			wp.updates.updateTheme( $link.attr( 'id' ) );
+			// Return the user to the input box of the theme's table row after closing the modal.
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $link.find( '.check-column input' );
+			wp.updates.updateTheme( $link.data( 'slug' ) );
 		} );
 
 		/**
@@ -1107,7 +1101,7 @@ window.wp = window.wp || {};
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin a.delete', function( event ) {
-			var $link = $( event.target ).parents( 'tr' ).prev();
+			var $link = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
 			if ( ! window.confirm( wp.updates.l10n.aysDelete ) ) {
@@ -1118,21 +1112,35 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.deleteTheme( $link.attr( 'id' ) );
+			wp.updates.deleteTheme( $link.data( 'slug' ) );
 		} );
 
 		/**
-		 * Bulk update for plugins.
+		 * Bulk action handler for plugins.
 		 *
 		 * @since 4.X.0
 		 *
 		 * @param {Event} event Event interface.
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
-			var plugins = [];
+			var action = $( event.target ).siblings( 'select' ).val(),
+				pluginAction;
 
-			if ( 'update-selected' !== $( event.target ).siblings( 'select' ).val() ) {
+			if ( 'plugins' !== pagenow || 'plugins-network' !== pagenow ) {
 				return;
+			}
+
+			switch ( action ) {
+				case 'update-selected':
+					pluginAction = wp.updates.updatePlugin;
+					break;
+
+				case 'delete-selected':
+					pluginAction = wp.updates.deletePlugin;
+					break;
+
+				default:
+					return;
 			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
@@ -1142,30 +1150,77 @@ window.wp = window.wp || {};
 			event.preventDefault();
 
 			// Un-check the bulk checkboxes.
-			$theList.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
+			$bulkActionForm.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
 			// Find all the checkboxes which have been checked.
-			$bulkActionForm
-				.find( 'input[name="checked[]"]:checked' )
-				.each( function( index, element ) {
-					var $checkbox  = $( element ),
-						$pluginRow = $checkbox.parents( 'tr' );
+			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function( index, element ) {
+				var $checkbox  = $( element ),
+					$pluginRow = $checkbox.parents( 'tr' );
 
-					// Un-check the box.
-					$checkbox.prop( 'checked', false );
+				// Un-check the box.
+				$checkbox.prop( 'checked', false );
 
-					// Only add update-able plugins to the queue.
-					if ( $pluginRow.hasClass( 'update' ) ) {
-						plugins.push( {
-							plugin: $pluginRow.data( 'plugin' ),
-							slug:   $pluginRow.data( 'slug' )
-						} );
-					}
+				// Only add update-able plugins to the update queue.
+				if ( 'update-selected' === action && ! $pluginRow.hasClass( 'update' ) ) {
+					return;
+				}
+
+				pluginAction( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
 			} );
+		} );
 
-			if ( plugins.length ) {
-				wp.updates.bulkUpdatePlugins( plugins );
+		/**
+		 * Bulk action handler for themes.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
+			var action = $( event.target ).siblings( 'select' ).val(),
+				pluginAction;
+
+			if ( 'themes-network' !== pagenow ) {
+				return;
 			}
+
+			switch ( action ) {
+				case 'update-selected':
+					pluginAction = wp.updates.updateTheme;
+					break;
+
+				case 'delete-selected':
+					pluginAction = wp.updates.deleteTheme;
+					break;
+
+				default:
+					return;
+			}
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			event.preventDefault();
+
+			// Un-check the bulk checkboxes.
+			$bulkActionForm.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
+
+			// Find all the checkboxes which have been checked.
+			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function( index, element ) {
+				var $checkbox  = $( element ),
+					$themeRow = $checkbox.parents( 'tr' );
+
+				// Un-check the box.
+				$checkbox.prop( 'checked', false );
+
+				// Only add update-able plugins to the update queue.
+				if ( 'update-selected' === action && ! $themeRow.hasClass( 'update' ) ) {
+					return;
+				}
+
+				pluginAction( $themeRow.data( 'slug' ) );
+			} );
 		} );
 
 		/**

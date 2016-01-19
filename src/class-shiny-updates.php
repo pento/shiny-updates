@@ -95,7 +95,7 @@ class Shiny_Updates {
 	function wp_admin_notice_template() {
 		?>
 		<script id="tmpl-wp-updates-admin-notice" type="text/html">
-			<div <# if ( data.id ) { #>id="{{ data.id }}"<# } #> class="notice {{ data.className }}"><p>{{ data.message }}</p></div>
+			<div <# if ( data.id ) { #>id="{{ data.id }}"<# } #> class="notice {{ data.className }}"><p>{{{ data.message }}}</p></div>
 		</script>
 		<?php
 	}
