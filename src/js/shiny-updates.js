@@ -161,7 +161,7 @@ window.wp = window.wp || {};
 			connection_type: wp.updates.filesystemCredentials.ftp.connectionType,
 			public_key:      wp.updates.filesystemCredentials.ssh.publicKey,
 			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
-		});
+		} );
 
 		return wp.ajax.post( action, data ).always( wp.updates.ajaxAlways );
 	};
@@ -643,7 +643,7 @@ window.wp = window.wp || {};
 	wp.updates.installThemeError = function( response ) {
 		var $card, $button,
 			errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error ),
-			$message     = wp.updates.adminNotice({ className: 'update-message notice-error notice-alt', message: errorMessage });
+			$message     = wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: errorMessage } );
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'install-theme' );
@@ -922,6 +922,7 @@ window.wp = window.wp || {};
 				slug: response.slug
 			}
 		} );
+
 		wp.updates.filesystemCredentials.available = false;
 		wp.updates.showErrorInCredentialsForm( response.error );
 		wp.updates.requestFilesystemCredentials();
@@ -977,7 +978,7 @@ window.wp = window.wp || {};
 			wp.updates.queueChecker();
 
 			return false;
-		});
+		} );
 
 		/**
 		 * Close the request credentials modal when clicking the 'Cancel' button or outside of he modal.
@@ -1001,7 +1002,7 @@ window.wp = window.wp || {};
 
 			$pluginRow.find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-warning notice-alt', message: $element.find( '.update-message p' ).html() }) );
 			$element.remove();
-		});
+		} );
 
 		/**
 		 * Click handler for plugin updates in List Table view.
@@ -1153,13 +1154,13 @@ window.wp = window.wp || {};
 
 			if ( ! itemsSelected.length ) {
 				event.preventDefault();
-				$( 'html, body' ).animate({ scrollTop: 0 });
+				$( 'html, body' ).animate( { scrollTop: 0 } );
 
 				return wp.updates.addAdminNotice({
 					id: 'no-items-selected',
 					className: 'notice-error is-dismissible',
 					message: wp.updates.l10n.noItemsSelected
-				});
+				} );
 			}
 
 			switch ( action ) {
@@ -1219,13 +1220,13 @@ window.wp = window.wp || {};
 
 			if ( ! itemsSelected.length ) {
 				event.preventDefault();
-				$( 'html, body' ).animate({ scrollTop: 0 });
+				$( 'html, body' ).animate( { scrollTop: 0 } );
 
 				return wp.updates.addAdminNotice({
 					id: 'no-items-selected',
 					className: 'notice-error is-dismissible',
 					message: wp.updates.l10n.noItemsSelected
-				});
+				} );
 			}
 
 			switch ( action ) {
@@ -1296,7 +1297,7 @@ window.wp = window.wp || {};
  		 */
 		$document.on( 'wp-updates-notice-added wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
-				var $el = $( this ),
+				var $notice = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
 					btnText = window.commonL10n.dismiss || '';
 
@@ -1304,14 +1305,15 @@ window.wp = window.wp || {};
 				$button.find( '.screen-reader-text' ).text( btnText );
 				$button.on( 'click.wp-dismiss-notice', function( event ) {
 					event.preventDefault();
-					$el.fadeTo( 100, 0, function() {
-						$el.slideUp( 100, function() {
-							$el.remove();
+
+					$notice.fadeTo( 100, 0, function() {
+						$notice.slideUp( 100, function() {
+							$notice.remove();
 						} );
 					} );
 				} );
 
-				$el.append( $button );
+				$notice.append( $button );
 			} );
 		} );
 
@@ -1338,7 +1340,7 @@ window.wp = window.wp || {};
 			wp.updates.searchRequest = wp.ajax.post( 'search-install-plugins', data ).done( function( response ) {
 				$theList.empty().append( response.items );
 				delete wp.updates.searchRequest;
-			});
+			} );
 		}, 250 ) );
 
 		/**
@@ -1375,7 +1377,7 @@ window.wp = window.wp || {};
 
 				$( '#bulk-action-form' ).empty().append( response.items );
 				delete wp.updates.searchRequest;
-			});
+			} );
 		}, 250 ) );
 
 		/**
@@ -1385,7 +1387,7 @@ window.wp = window.wp || {};
 		 */
 		$( '#typeselector' ).on( 'change', function() {
 			$( 'input.wp-filter-search' ).trigger( 'search' );
-		});
+		} );
 	} );
 
 	/**
@@ -1417,7 +1419,7 @@ window.wp = window.wp || {};
 		};
 
 		target.postMessage( JSON.stringify( job ), window.location.origin );
-	});
+	} );
 
 	/**
 	 * Handles postMessage events.
