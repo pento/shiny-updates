@@ -364,28 +364,6 @@ window.wp = window.wp || {};
 	};
 
 	/**
-	 * Send an Ajax request to the server to update plugins in bulk.
-	 *
-	 * @since 4.X.0
-	 *
-	 * @param {array} plugins
-	 */
-	wp.updates.bulkUpdatePlugins = function( plugins ) {
-		var $message;
-
-		_.each( plugins, function( plugin ) {
-			$message = $( 'tr[data-plugin="' + plugin.plugin + '"]' ).find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
-
-			if ( $message.html() !== wp.updates.l10n.updating ) {
-				$message.data( 'originaltext', $message.html() );
-			}
-			$message.text( wp.updates.l10n.updateQueued );
-
-			wp.updates.updatePlugin( plugin.plugin, plugin.slug );
-		} );
-	};
-
-	/**
 	 * Send an Ajax request to the server to install a plugin.
 	 *
 	 * @since 4.X.0
