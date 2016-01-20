@@ -97,6 +97,25 @@ class Shiny_Updates {
 		<script id="tmpl-wp-updates-admin-notice" type="text/html">
 			<div <# if ( data.id ) { #>id="{{ data.id }}"<# } #> class="notice {{ data.className }}"><p>{{{ data.message }}}</p></div>
 		</script>
+		<script id="tmpl-wp-bulk-updates-admin-notice" type="text/html">
+			<div id="{{ data.id }}" class="notice <# if ( data.errors ) { #>notice-error<# } else { #>notice-success<# } #>">
+				<p>
+					<# if ( data.successes ) { #>
+						<?php printf( __( '%s plugins successfully updated.' ), '{{ data.successes }}' ); ?>
+					<# } #>
+					<# if ( data.errors ) { #>
+						<button class="button-link"><?php printf( __( '%s failures.' ), '{{ data.errors }}' ); ?></button>
+					<# } #>
+				</p>
+				<# if ( data.errors ) { #>
+					<ul class="hidden">
+						<# _.each( data.errorMessages, function( errorMessage ) { #>
+							<li>{{ errorMessage }}</li>
+						<# } ); #>
+					</ul>
+				<# } #>
+			</div>
+		</script>
 		<?php
 	}
 

@@ -110,3 +110,19 @@
 	content: '';
 	margin: auto;
 }
+
+
+.notice .button-link {
+	color: #0073aa;
+	-webkit-transition-property: border, background, color;
+	transition-property: border, background, color;
+	-webkit-transition-duration: .05s;
+	transition-duration: .05s;
+	-webkit-transition-timing-function: ease-in-out;
+	transition-timing-function: ease-in-out;
+}
+
+.notice .button-link:hover,
+.notice .button-link:active {
+	color: #00a0d2;
+}

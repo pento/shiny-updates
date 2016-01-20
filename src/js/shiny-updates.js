@@ -1146,7 +1146,7 @@ window.wp = window.wp || {};
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
 			var action        = $( event.target ).siblings( 'select' ).val(),
 				itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
-				pluginAction;
+				pluginAction, success = 0, error = 0, errorMessages = [];
 
 			if ( 'plugins' !== pagenow && 'plugins-network' !== pagenow ) {
 				return;
@@ -1199,6 +1199,30 @@ window.wp = window.wp || {};
 				}
 
 				pluginAction( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
+			} );
+
+			$document.on( 'wp-plugin-update-success', function() {
+				success++;
+			} );
+
+			$document.on( 'wp-plugin-update-error', function( event, response ) {
+				error++;
+				errorMessages.push( response.pluginName + ': ' + response.error );
+			} );
+
+			$document.on( 'wp-plugin-update-success wp-plugin-update-error', function() {
+				wp.updates.adminNotice = wp.template( 'wp-bulk-updates-admin-notice' );
+
+				wp.updates.addAdminNotice( {
+					id: 'bulk-action-notice',
+					successes: success,
+					errors: error,
+					errorMessages: errorMessages
+				} );
+
+				$( '#bulk-action-notice' ).on( 'click', 'button', function() {
+					$( '#bulk-action-notice' ).find( 'ul' ).toggleClass( 'hidden' );
+				} );
 			} );
 		} );
 
