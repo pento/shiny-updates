@@ -4,6 +4,11 @@ window.wp = window.wp || {};
 (function( $, wp ) {
 	var $document = $( document );
 
+	/**
+	 * The WP Updates object.
+	 *
+	 * @type {object}
+	 */
 	wp.updates = {};
 
 	/**
@@ -11,7 +16,7 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var string
+	 * @type {string}
 	 */
 	wp.updates.ajaxNonce = window._wpUpdatesSettings.ajax_nonce;
 
@@ -20,7 +25,7 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var object
+	 * @type {object}
 	 */
 	wp.updates.l10n = window._wpUpdatesSettings.l10n;
 
@@ -29,27 +34,39 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var bool
+	 * @type {bool}
 	 */
-	wp.updates.shouldRequestFilesystemCredentials = null;
+	wp.updates.shouldRequestFilesystemCredentials = false;
 
 	/**
 	 * Filesystem credentials to be packaged along with the request.
 	 *
 	 * @since 4.2.0
+	 * @since 4.X.0 Added `available` property to indicate whether credentials have been provided.
 	 *
-	 * @var object
+	 * @type {object} filesystemCredentials                    Holds filesystem credentials.
+	 * @type {object} filesystemCredentials.ftp                Holds FTP credentials.
+	 * @type {string} filesystemCredentials.ftp.host           FTP host. Default empty string.
+	 * @type {string} filesystemCredentials.ftp.username       FTP user name. Default empty string.
+	 * @type {string} filesystemCredentials.ftp.password       FTP password. Default empty string.
+	 * @type {string} filesystemCredentials.ftp.connectionType Type of FTP connection. 'ftp' or 'ftps'.
+	 *                                                         Default empty string.
+	 * @type {object} filesystemCredentials.ssh                Holds SSH credentials.
+	 * @type {string} filesystemCredentials.ssh.publicKey      The public key. Default empty string.
+	 * @type {string} filesystemCredentials.ssh.privateKey     The private key. Default empty string.
+	 * @type {bool}   filesystemCredentials.available          Whether filesystem credentials have been provided.
+	 *                                                         Default 'false'.
 	 */
 	wp.updates.filesystemCredentials = {
 		ftp: {
-			host: null,
-			username: null,
-			password: null,
-			connectionType: null
+			host: '',
+			username: '',
+			password: '',
+			connectionType: ''
 		},
 		ssh: {
-			publicKey: null,
-			privateKey: null
+			publicKey: '',
+			privateKey: ''
 		},
 		available: false
 	};
@@ -59,7 +76,7 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var bool
+	 * @type {bool}
 	 */
 	wp.updates.updateLock = false;
 
@@ -68,7 +85,7 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.X.0
 	 *
-	 * @var {function} A function that lazily-compiles the template requested.
+	 * @type {function} A function that lazily-compiles the template requested.
 	 */
 	wp.updates.adminNotice = wp.template( 'wp-updates-admin-notice' );
 
@@ -78,7 +95,7 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var array
+	 * @type {array}
 	 */
 	wp.updates.updateQueue = [];
 
@@ -87,9 +104,9 @@ window.wp = window.wp || {};
 	 *
 	 * @since 4.2.0
 	 *
-	 * @var jQuery object
+	 * @type {jQuery}
 	 */
-	wp.updates.$elToReturnFocusToFromCredentialsModal = null;
+	wp.updates.$elToReturnFocusToFromCredentialsModal;
 
 	/**
 	 * Adds or updates an admin notice.
