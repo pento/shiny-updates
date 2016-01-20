@@ -92,6 +92,29 @@ window.wp = window.wp || {};
 	wp.updates.$elToReturnFocusToFromCredentialsModal = null;
 
 	/**
+	 * Adds or updates an admin notice.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} data
+	 * @param {string} data.id        Unique id that will be used as the notice's id attribute.
+	 * @param {string} data.className Class names that will be used in the admin notice.
+	 * @param {string} data.message   The message displayed in the notice.
+	 */
+	wp.updates.addAdminNotice = function( data ) {
+		var $notices     = $( '.wrap' ),
+			$adminNotice = wp.updates.adminNotice( data );
+
+		if ( $notices.find( '#' + data.id ).length ) {
+			$notices.find( '#' + data.id ).replaceWith( $adminNotice );
+		} else {
+			$notices.find( '> h1' ).after( $adminNotice );
+		}
+
+		$document.trigger( 'wp-updates-notice-added' );
+	};
+
+	/**
 	 * Handles Ajax requests to WordPress.
 	 *
 	 * @since 4.X.0
@@ -979,7 +1002,7 @@ window.wp = window.wp || {};
 			var $element   = $( element ),
 				$pluginRow = $element.prev();
 
-			$pluginRow.find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-warning notice-alt', message: $element.find( '.update-message' ).html() }) );
+			$pluginRow.find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-warning notice-alt', message: $element.find( '.update-message p' ).html() }) );
 			$element.remove();
 		});
 
@@ -1123,11 +1146,23 @@ window.wp = window.wp || {};
 		 * @param {Event} event Event interface.
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
-			var action = $( event.target ).siblings( 'select' ).val(),
+			var action        = $( event.target ).siblings( 'select' ).val(),
+				itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
 				pluginAction;
 
-			if ( 'plugins' !== pagenow || 'plugins-network' !== pagenow ) {
+			if ( 'plugins' !== pagenow && 'plugins-network' !== pagenow ) {
 				return;
+			}
+
+			if ( ! itemsSelected.length ) {
+				event.preventDefault();
+				$( 'html, body' ).animate({ scrollTop: 0 });
+
+				return wp.updates.addAdminNotice({
+					id: 'no-items-selected',
+					className: 'notice-error is-dismissible',
+					message: wp.updates.l10n.noItemsSelected
+				});
 			}
 
 			switch ( action ) {
@@ -1153,7 +1188,7 @@ window.wp = window.wp || {};
 			$bulkActionForm.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
 			// Find all the checkboxes which have been checked.
-			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function( index, element ) {
+			itemsSelected.each( function( index, element ) {
 				var $checkbox  = $( element ),
 					$pluginRow = $checkbox.parents( 'tr' );
 
@@ -1177,20 +1212,32 @@ window.wp = window.wp || {};
 		 * @param {Event} event Event interface.
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
-			var action = $( event.target ).siblings( 'select' ).val(),
-				pluginAction;
+			var action        = $( event.target ).siblings( 'select' ).val(),
+				itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
+				themeAction;
 
 			if ( 'themes-network' !== pagenow ) {
 				return;
 			}
 
+			if ( ! itemsSelected.length ) {
+				event.preventDefault();
+				$( 'html, body' ).animate({ scrollTop: 0 });
+
+				return wp.updates.addAdminNotice({
+					id: 'no-items-selected',
+					className: 'notice-error is-dismissible',
+					message: wp.updates.l10n.noItemsSelected
+				});
+			}
+
 			switch ( action ) {
 				case 'update-selected':
-					pluginAction = wp.updates.updateTheme;
+					themeAction = wp.updates.updateTheme;
 					break;
 
 				case 'delete-selected':
-					pluginAction = wp.updates.deleteTheme;
+					themeAction = wp.updates.deleteTheme;
 					break;
 
 				default:
@@ -1207,19 +1254,19 @@ window.wp = window.wp || {};
 			$bulkActionForm.find( '.manage-column [type="checkbox"]' ).prop( 'checked', false );
 
 			// Find all the checkboxes which have been checked.
-			$bulkActionForm.find( 'input[name="checked[]"]:checked' ).each( function( index, element ) {
-				var $checkbox  = $( element ),
+			itemsSelected.each( function( index, element ) {
+				var $checkbox = $( element ),
 					$themeRow = $checkbox.parents( 'tr' );
 
 				// Un-check the box.
 				$checkbox.prop( 'checked', false );
 
-				// Only add update-able plugins to the update queue.
+				// Only add update-able themes to the update queue.
 				if ( 'update-selected' === action && ! $themeRow.hasClass( 'update' ) ) {
 					return;
 				}
 
-				pluginAction( $themeRow.data( 'slug' ) );
+				themeAction( $themeRow.data( 'slug' ) );
 			} );
 		} );
 
@@ -1250,7 +1297,7 @@ window.wp = window.wp || {};
 		 *
 		 * @since 4.X.0
  		 */
-		$document.on( 'wp-progress-updated wp-theme-update-error wp-theme-install-error', function() {
+		$document.on( 'wp-updates-notice-added wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $el = $( this ),
 					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),

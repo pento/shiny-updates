@@ -1,3 +1,4 @@
+.wrap .notice p:before,
 .theme-info .updating-message::before,
 .theme-info .updated-message::before,
 .theme-install.updating-message::before {
@@ -101,6 +102,7 @@
 }
 
 .wrap .notice-error p:before {
+	color: #dc3232;
 	content: "\f534";
 }
 

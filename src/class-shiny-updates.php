@@ -117,6 +117,7 @@ class Shiny_Updates {
 		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
 			'ajax_nonce' => wp_create_nonce( 'updates' ),
 			'l10n'       => array(
+				'noItemsSelected'           => __( 'Please select at least one item to perform this action on.' ),
 				'updating'                  => __( 'Updating...' ), // No ellipsis.
 				'updated'                   => __( 'Updated!' ),
 				'updateNow'                 => __( 'Update Now' ),
