@@ -49,7 +49,7 @@ window.wp = window.wp || {};
 	 * @type {string} filesystemCredentials.ftp.host           FTP host. Default empty string.
 	 * @type {string} filesystemCredentials.ftp.username       FTP user name. Default empty string.
 	 * @type {string} filesystemCredentials.ftp.password       FTP password. Default empty string.
-	 * @type {string} filesystemCredentials.ftp.connectionType Type of FTP connection. 'ftp' or 'ftps'.
+	 * @type {string} filesystemCredentials.ftp.connectionType Type of FTP connection. 'ssh', 'ftp', or 'ftps'.
 	 *                                                         Default empty string.
 	 * @type {object} filesystemCredentials.ssh                Holds SSH credentials.
 	 * @type {string} filesystemCredentials.ssh.publicKey      The public key. Default empty string.
@@ -367,6 +367,8 @@ window.wp = window.wp || {};
 	 * Send an Ajax request to the server to update plugins in bulk.
 	 *
 	 * @since 4.X.0
+	 *
+	 * @param {array} plugins
 	 */
 	wp.updates.bulkUpdatePlugins = function( plugins ) {
 		var $message;
