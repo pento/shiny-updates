@@ -59,6 +59,8 @@
 }
 
 /* Inline notifications */
+.plugins .update td,
+.plugins .update th,
 .plugins tr.active + tr.inactive.update th,
 .plugins tr.active + tr.inactive.update td,
 .plugins tr.active + tr.inactive.updated th,
@@ -110,7 +112,6 @@
 	content: '';
 	margin: auto;
 }
-
 
 .notice .button-link {
 	color: #0073aa;
