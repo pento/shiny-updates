@@ -981,7 +981,7 @@ window.wp = window.wp || {};
 		} );
 
 		/**
-		 * Close the request credentials modal when clicking the 'Cancel' button or outside of he modal.
+		 * Close the request credentials modal when clicking the 'Cancel' button or outside of the modal.
 		 *
 		 * @since 4.2.0
 		 */
