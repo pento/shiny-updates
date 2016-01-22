@@ -13,5 +13,6 @@
 
 include_once 'src/class-shiny-updates.php';
 include_once 'src/ajax-actions.php';
+include_once 'src/update.php';
 
 add_action( 'init', array( 'Shiny_Updates', 'init' ) );
