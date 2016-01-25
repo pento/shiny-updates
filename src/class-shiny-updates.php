@@ -139,6 +139,7 @@ class Shiny_Updates {
 		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
 			'ajax_nonce' => wp_create_nonce( 'updates' ),
 			'plugins'    => $plugins,
+			'totals'     => $GLOBALS['totals'],
 			'l10n'       => array(
 				'noPlugins'                 => __( 'You do not appear to have any plugins available at this time.' ),
 				'noItemsSelected'           => __( 'Please select at least one item to perform this action on.' ),

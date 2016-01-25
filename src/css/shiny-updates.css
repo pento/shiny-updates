@@ -74,7 +74,7 @@ tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .update-message {
 	background-color: #fff8e5;
 }
 
-.plugin-update-tr .update-message {
+.plugins .plugin-update-tr .update-message {
 	margin: 5px 20px 15px 31px;
 	padding: 1px 12px 1px 40px;
 }
@@ -85,17 +85,12 @@ tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .update-message {
 	margin: auto;
 }
 
-.widefat td p {
+.widefat.plugins td p {
 	margin: 0.5em 0;
 }
 
 .update-message {
 	padding-left: 40px;
-}
-
-.column-description .update-message p {
-	margin: 0.5em 0;
-	padding: 2px;
 }
 
 .update-message p:before {
