@@ -93,7 +93,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 			$active_class = is_plugin_active( $file ) ? ' active' : '';
 		}
 
-		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message"><p>';
+		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>';
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			/* translators: 1: plugin name, 2: details URL, 3: escaped plugin name, 4: version number */
@@ -187,7 +187,7 @@ function su_theme_update_row( $theme_key, $theme ) {
 
 	$wp_list_table = _get_list_table( 'WP_MS_Themes_List_Table' );
 
-	echo '<tr class="plugin-update-tr"><td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange"><div class="update-message"><p>';
+	echo '<tr class="plugin-update-tr"><td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>';
 	if ( ! current_user_can( 'update_themes' ) ) {
 		/* translators: 1: theme name, 2: details URL, 3: escaped theme name, 4: version number */
 		printf( __( 'There is a new version of %1$s available. <a href="%2$s" class="thickbox" aria-label="View %3$s version %4$s details">View version %4$s details</a>.' ),

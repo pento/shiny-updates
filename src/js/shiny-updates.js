@@ -1040,14 +1040,6 @@ window.wp = window.wp || {};
 			$( this ).parents( 'form' ).find( '#private_key, #public_key' ).parents( 'label' ).toggle( ( 'ssh' === $( this ).val() ) );
 		}).change();
 
-		$( '.plugin-update-tr' ).each( function( index, element ) {
-			var $element   = $( element ),
-				$pluginRow = $element.prev();
-
-			$pluginRow.find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-warning notice-alt', message: $element.find( '.update-message p' ).html() }) );
-			$element.remove();
-		} );
-
 		/**
 		 * Click handler for plugin updates in List Table view.
 		 *
@@ -1124,7 +1116,7 @@ window.wp = window.wp || {};
 		 * @param {Event} event Event interface.
 		 */
 		$theList.on( 'click', '[data-plugin] a.delete', function( event ) {
-			var $link = $( event.target );
+			var $pluginRow = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
 			if ( ! window.confirm( wp.updates.l10n.aysDelete ) ) {
@@ -1135,7 +1127,7 @@ window.wp = window.wp || {};
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.deletePlugin( $link.data( 'plugin' ), $link.data( 'slug' ) );
+			wp.updates.deletePlugin( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
 		} );
 
 		/**
