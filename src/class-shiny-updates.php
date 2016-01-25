@@ -130,8 +130,10 @@ class Shiny_Updates {
 		}
 
 		$plugins = array();
-		foreach ( $GLOBALS['plugins'] as $key => $list ) {
-			$plugins[ $key ] = array_keys( (array) $list );
+		if ( isset( $GLOBALS['plugins'] ) ) {
+			foreach ( $GLOBALS['plugins'] as $key => $list ) {
+				$plugins[ $key ] = array_keys( (array) $list );
+			}
 		}
 
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
