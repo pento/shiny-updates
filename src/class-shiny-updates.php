@@ -129,13 +129,20 @@ class Shiny_Updates {
 			return;
 		}
 
+		$plugins = array();
+		foreach ( $GLOBALS['plugins'] as $key => $list ) {
+			$plugins[ $key ] = array_keys( (array) $list );
+		}
+
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
 		wp_dequeue_script( 'updates' );
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'jquery', 'wp-util', 'wp-a11y' ), null, true );
 		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
 			'ajax_nonce' => wp_create_nonce( 'updates' ),
+			'plugins'    => $plugins,
 			'l10n'       => array(
+				'noPlugins'                 => __( 'You do not appear to have any plugins available at this time.' ),
 				'noItemsSelected'           => __( 'Please select at least one item to perform this action on.' ),
 				'updating'                  => __( 'Updating...' ), // No ellipsis.
 				'updated'                   => __( 'Updated!' ),

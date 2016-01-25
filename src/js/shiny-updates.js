@@ -469,16 +469,60 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.deletePluginSuccess = function( response ) {
-		var $pluginRows = $( '[data-plugin="' + response.plugin + '"]' );
-
-		// Remove plugin from update count.
-		if ( $pluginRows.length > 1 ) {
-			wp.updates.decrementCount( 'plugin' );
-		}
 
 		// Removes the plugin and updates rows.
-		$pluginRows.css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+		$( '[data-plugin="' + response.plugin + '"]' ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+			var $form       = $( '#bulk-action-form' ),
+				$views      = $( '.subsubsub' ),
+				columnCount = $form.find( 'thead th:not(.hidden), thead td' ).length,
+				plugins     = window._wpUpdatesSettings.plugins;
+
 			$( this ).remove();
+
+			// Remove plugin from update count.
+			if ( -1 !== plugins.upgrade.indexOf( response.plugin ) ) {
+				plugins.upgrade = _.without( plugins.upgrade, response.plugin );
+				wp.updates.decrementCount( 'plugin' );
+			}
+
+			// Remove from views.
+			if ( -1 !== plugins.inactive.indexOf( response.plugin ) ) {
+				plugins.inactive = _.without( plugins.inactive, response.plugin );
+				if ( plugins.inactive.length > 0 ) {
+					$views.find( '.inactive .count' ).text( '(' + plugins.inactive.length + ')' );
+				} else {
+					$views.find( '.inactive' ).remove();
+				}
+			}
+
+			if ( -1 !== plugins.active.indexOf( response.plugin ) ) {
+				plugins.active = _.without( plugins.active, response.plugin );
+				if ( plugins.active.length ) {
+					$views.find( '.active .count' ).text( '(' + plugins.active.length + ')' );
+				} else {
+					$views.find( '.active' ).remove();
+				}
+			}
+
+			if ( -1 !== plugins.recently_activated.indexOf( response.plugin ) ) {
+				plugins.recently_activated = _.without( plugins.recently_activated, response.plugin );
+				if ( plugins.recently_activated.length ) {
+					$views.find( '.recently_activated .count' ).text( '(' + plugins.recently_activated.length + ')' );
+				} else {
+					$views.find( '.recently_activated' ).remove();
+				}
+			}
+
+			plugins.all = _.without( plugins.all, response.plugin );
+			if ( plugins.all.length ) {
+				$views.find( '.all .count' ).text( '(' + plugins.all.length + ')' );
+			} else {
+				$form.find( '.tablenav' ).css( { visibility: 'hidden' } );
+				$views.find( '.all' ).remove();
+				if ( ! $form.find( 'tr.no-items' ).length ) {
+					$form.find( '#the-list' ).append( '<tr class="no-items"><td class="colspanchange" colspan="' + columnCount + '">' + wp.updates.l10n.noPlugins + '</td></tr>' );
+				}
+			}
 		} );
 
 		wp.a11y.speak( wp.updates.l10n.deleted, 'polite' );
