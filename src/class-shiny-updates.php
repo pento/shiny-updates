@@ -47,10 +47,6 @@ class Shiny_Updates {
 		// Plugin activations.
 		add_action( 'wp_ajax_activate-plugin', array( $this, 'wp_ajax_activate_plugin' ) );
 
-		// Plugin row actions.
-		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
-		add_filter( 'network_admin_plugin_action_links', array( $this, 'plugin_action_links' ), 10, 4 );
-
 		// Themes.
 		add_filter( 'wp_prepare_themes_for_js', array( $this, 'theme_data' ) );
 
@@ -193,32 +189,6 @@ class Shiny_Updates {
 		if ( 'theme-install.php' === $hook ) {
 			add_action( 'in_admin_header', array( $this, 'theme_install_templates' ) );
 		}
-	}
-
-	/**
-	 * Filter the action links displayed for each plugin in the Plugins list table.
-	 *
-	 * @param array  $actions     An array of plugin action links.
-	 * @param string $plugin_file Path to the plugin file relative to the plugins directory.
-	 * @param array  $plugin_data An array of plugin data.
-	 * @param string $context     The plugin context.
-	 * @return array
-	 */
-	function plugin_action_links( $actions, $plugin_file, $plugin_data, $context ) {
-		// Adjust the delete action, adding data attributes.
-		if ( ! empty( $actions['delete'] ) ) {
-			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
-			$actions['delete'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=delete-selected&amp;checked[]=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'bulk-plugins' ) . '" class="delete" aria-label="' . esc_attr( sprintf( __( 'Delete %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Delete' ) . '</a>';
-		}
-
-		// Adjust the activate action, adding data attributes.
-		if ( ! empty( $actions['activate'] ) ) {
-			$slug = empty( $plugin_data['slug'] ) ? dirname( $plugin_file ) : $plugin_data['slug'];
-			/* translators: %s: plugin name */
-			$actions['activate'] = '<a data-plugin="' . $plugin_file . '" data-slug="' . $slug . '" href="' . wp_nonce_url( 'plugins.php?action=activate&amp;plugin=' . $plugin_file . '&amp;plugin_status=' . $context . '&amp;paged=' . $GLOBALS['page'] . '&amp;s=' . $GLOBALS['s'], 'activate-plugin_' . $plugin_file ) . '" class="edit" aria-label="' . esc_attr( sprintf( __( 'Activate %s' ), $plugin_data['Name'] ) ) . '">' . __( 'Activate' ) . '</a>';
-		}
-
-		return $actions;
 	}
 
 	/**
