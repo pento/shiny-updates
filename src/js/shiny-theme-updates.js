@@ -79,6 +79,8 @@ window.wp = window.wp || {};
 		},
 
 		deleteTheme: function( event ) {
+			var _this = this,
+				_collection = _this.model.collection;
 			event.preventDefault();
 
 			// Confirmation dialog for deleting a theme.
@@ -89,6 +91,15 @@ window.wp = window.wp || {};
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
 			}
+
+			$( document ).one( 'wp-delete-theme-success', function( event, response ) {
+				_this.$el.find( '.close' ).trigger( 'click' );
+				$( '#' + response.slug ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+					$( this ).remove();
+					_collection.remove( _this.model );
+					_collection.trigger( 'update' );
+				} );
+			} );
 
 			wp.updates.deleteTheme( this.model.get( 'id' ) );
 		}
@@ -107,11 +118,11 @@ window.wp = window.wp || {};
 		},
 
 		installTheme: function( event ) {
-			var _this  = this,
-				target = $( event.target );
+			var _this   = this,
+				$target = $( event.target );
 			event.preventDefault();
 
-			if ( target.hasClass( 'disabled' ) ) {
+			if ( $target.hasClass( 'disabled' ) ) {
 				return;
 			}
 
@@ -123,7 +134,7 @@ window.wp = window.wp || {};
 				_this.model.set( { 'installed': true } );
 			} );
 
-			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
+			wp.updates.installTheme( $target.data( 'slug' ) );
 		}
 	} );
 

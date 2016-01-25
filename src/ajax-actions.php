@@ -8,7 +8,7 @@
 /**
  * AJAX handler for installing a theme.
  *
- * @since 4.5.0
+ * @since 4.X.0
  */
 function wp_ajax_install_theme() {
 	check_ajax_referer( 'updates' );
@@ -73,7 +73,7 @@ function wp_ajax_install_theme() {
 /**
  * AJAX handler for updating a theme.
  *
- * @since 4.5.0
+ * @since 4.X.0
  */
 function wp_ajax_update_theme() {
 	check_ajax_referer( 'updates' );
@@ -150,7 +150,7 @@ function wp_ajax_update_theme() {
 /**
  * AJAX handler for deleting a theme.
  *
- * @since 4.5.0
+ * @since 4.X.0
  */
 function wp_ajax_delete_theme() {
 	check_ajax_referer( 'updates' );
@@ -161,7 +161,7 @@ function wp_ajax_delete_theme() {
 
 	$stylesheet = sanitize_key( $_POST['slug'] );
 	$status     = array(
-		'update' => 'theme',
+		'delete' => 'theme',
 		'slug'   => $stylesheet,
 	);
 
@@ -175,9 +175,86 @@ function wp_ajax_delete_theme() {
 		wp_send_json_error( $status );
 	}
 
+	// Check filesystem credentials. `delete_plugins()` will bail otherwise.
+	ob_start();
+	$url = wp_nonce_url( 'themes.php?action=delete&stylesheet=' . urlencode( $stylesheet ), 'delete-theme_' . $stylesheet );
+	if ( false === ( $credentials = request_filesystem_credentials( $url ) ) || ! WP_Filesystem( $credentials ) ) {
+		global $wp_filesystem;
+		ob_end_clean();
+
+		$status['errorCode'] = 'unable_to_connect_to_filesystem';
+		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
+
+		// Pass through the error from WP_Filesystem if one was raised.
+		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+			$status['error'] = $wp_filesystem->errors->get_error_message();
+		}
+
+		wp_send_json_error( $status );
+	}
+
 	include_once( ABSPATH . 'wp-admin/includes/theme.php' );
 
 	$result = delete_theme( $stylesheet );
+
+	if ( is_wp_error( $result ) ) {
+		$status['error'] = $result->get_error_message();
+		wp_send_json_error( $status );
+
+	} elseif ( false === $result ) {
+		$status['error'] = __( 'Theme could not be deleted.' );
+		wp_send_json_error( $status );
+	}
+
+	wp_send_json_success( $status );
+}
+
+// No need to register the callback - we forgot to remove it from core in 4.2.
+/**
+ * AJAX handler for installing a plugin.
+ *
+ * @since 4.X.0
+ */
+function wp_ajax_install_plugin() {
+	check_ajax_referer( 'updates' );
+
+	if ( empty( $_POST['slug'] ) ) {
+		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
+	}
+
+	$status = array(
+		'install' => 'plugin',
+		'slug'    => sanitize_key( $_POST['slug'] ),
+	);
+
+	if ( ! current_user_can( 'install_plugins' ) ) {
+		$status['error'] = __( 'You do not have sufficient permissions to install plugins on this site.' );
+		wp_send_json_error( $status );
+	}
+
+	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
+	include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
+
+	$api = plugins_api( 'plugin_information', array(
+		'slug'   => sanitize_key( $_POST['slug'] ),
+		'fields' => array(
+			'sections' => false,
+		),
+	) );
+
+	if ( is_wp_error( $api ) ) {
+		$status['error'] = $api->get_error_message();
+		wp_send_json_error( $status );
+	}
+
+	$status['pluginName'] = $api->name;
+
+	$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
+	$result = $upgrader->install( $api->download_link );
+
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		$status['debug'] = $upgrader->skin->get_upgrade_messages();
+	}
 
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
@@ -190,7 +267,7 @@ function wp_ajax_delete_theme() {
 		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
 		// Pass through the error from WP_Filesystem if one was raised.
-		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
+		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
 			$status['error'] = $wp_filesystem->errors->get_error_message();
 		}
 
@@ -269,14 +346,15 @@ function wpsu_ajax_update_plugin() {
 		if ( $plugin_data['Version'] ) {
 			$status['newVersion'] = sprintf( __( 'Version %s' ), $plugin_data['Version'] );
 		}
-
 		wp_send_json_success( $status );
+
 	} else if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
 
 	} else if ( is_bool( $result ) && ! $result ) {
 		global $wp_filesystem;
+
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
 		$status['error'] = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
 
@@ -286,18 +364,17 @@ function wpsu_ajax_update_plugin() {
 		}
 
 		wp_send_json_error( $status );
-
-	} else {
-		// An unhandled error occurred.
-		$status['error'] = __( 'Plugin update failed.' );
-		wp_send_json_error( $status );
 	}
+
+	// An unhandled error occurred.
+	$status['error'] = __( 'Plugin update failed.' );
+	wp_send_json_error( $status );
 }
 
 /**
  * AJAX handler for deleting a plugin.
  *
- * @since 4.5.0
+ * @since 4.X.0
  */
 function wp_ajax_delete_plugin() {
 	check_ajax_referer( 'updates' );
@@ -326,14 +403,12 @@ function wp_ajax_delete_plugin() {
 		wp_send_json_error( $status );
 	}
 
-	$delete_result = delete_plugins( array( $plugin ) );
-
-	if ( is_wp_error( $delete_result ) ) {
-		$status['error'] = $delete_result->get_error_message();
-		wp_send_json_error( $status );
-
-	} else if ( is_null( $delete_result ) ) {
+	// Check filesystem credentials. `delete_plugins()` will bail otherwise.
+	ob_start();
+	$url = wp_nonce_url( 'plugins.php?action=delete-selected&verify-delete=1&checked[]=' . $plugin, 'bulk-plugins' );
+	if ( false === ( $credentials = request_filesystem_credentials( $url ) ) || ! WP_Filesystem( $credentials ) ) {
 		global $wp_filesystem;
+		ob_end_clean();
 
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
 		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
@@ -344,77 +419,16 @@ function wp_ajax_delete_plugin() {
 		}
 
 		wp_send_json_error( $status );
-
-	} elseif ( false === $delete_result ) {
-		$status['error'] = __( 'Plugin could not be deleted.' );
-		wp_send_json_error( $status );
 	}
 
-	wp_send_json_success( $status );
-}
-
-// No need to register the callback - we forgot to remove it from core in 4.2.
-/**
- * AJAX handler for installing a plugin.
- *
- * @since 4.5.0
- */
-function wp_ajax_install_plugin() {
-	check_ajax_referer( 'updates' );
-
-	if ( empty( $_POST['slug'] ) ) {
-		wp_send_json_error( array( 'errorCode' => 'no_plugin_specified' ) );
-	}
-
-	$status = array(
-		'install' => 'plugin',
-		'slug'    => sanitize_key( $_POST['slug'] ),
-	);
-
-	if ( ! current_user_can( 'install_plugins' ) ) {
-		$status['error'] = __( 'You do not have sufficient permissions to install plugins on this site.' );
-		wp_send_json_error( $status );
-	}
-
-	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-	include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
-
-	$api = plugins_api( 'plugin_information', array(
-		'slug'   => sanitize_key( $_POST['slug'] ),
-		'fields' => array(
-			'sections' => false,
-		),
-	) );
-
-	if ( is_wp_error( $api ) ) {
-		$status['error'] = $api->get_error_message();
-		wp_send_json_error( $status );
-	}
-
-	$status['pluginName'] = $api->name;
-
-	$upgrader = new Plugin_Upgrader( new Automatic_Upgrader_Skin() );
-	$result = $upgrader->install( $api->download_link );
-
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		$status['debug'] = $upgrader->skin->get_upgrade_messages();
-	}
+	$result = delete_plugins( array( $plugin ) );
 
 	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
 
-	} else if ( is_null( $result ) ) {
-		global $wp_filesystem;
-
-		$status['errorCode'] = 'unable_to_connect_to_filesystem';
-		$status['error']     = __( 'Unable to connect to the filesystem. Please confirm your credentials.' );
-
-		// Pass through the error from WP_Filesystem if one was raised.
-		if ( is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['error'] = $wp_filesystem->errors->get_error_message();
-		}
-
+	} elseif ( false === $result ) {
+		$status['error'] = __( 'Plugin could not be deleted.' );
 		wp_send_json_error( $status );
 	}
 
@@ -424,7 +438,7 @@ function wp_ajax_install_plugin() {
 /**
  * Ajax handler for searching plugins.
  *
- * @since 4.5.0
+ * @since 4.X.0
  *
  * @global WP_List_Table $wp_list_table
  * @global string        $hook_suffix
@@ -458,7 +472,7 @@ function wp_ajax_search_plugins() {
 /**
  * Ajax handler for searching plugins to install.
  *
- * @since 4.5.0
+ * @since 4.X.0
  *
  * @global WP_List_Table $wp_list_table
  * @global string        $hook_suffix

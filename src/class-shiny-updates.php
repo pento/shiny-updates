@@ -32,7 +32,7 @@ class Shiny_Updates {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
 		// Add the update HTML for plugin updates progress.
-		add_action( 'pre_current_active_plugins', array( $this, 'wp_update_notification_template' ) );
+		add_action( 'in_admin_header', array( $this, 'wp_admin_notice_template' ) );
 
 		// Search plugins.
 		add_action( 'wp_ajax_search-plugins', 'wp_ajax_search_plugins' );
@@ -81,20 +81,42 @@ class Shiny_Updates {
 
 	/**
 	 * Add the HTML template for progress updates.
+	 *
+	 * Template takes one argument with three values:
+	 *
+	 * param {object} data {
+	 *     Arguments for admin notice.
+	 *
+	 *     @type string id        ID of the notice.
+	 *     @type string className Class names for the notice.
+	 *     @type string message   The notice's message.
+	 * }
 	 */
-	function wp_update_notification_template() {
+	function wp_admin_notice_template() {
 		?>
-		<div id="wp-progress-placeholder"></div>
-		<script id="tmpl-wp-progress-template" type="text/html">
-			<div class="notice wp-progress-update is-dismissible <# if ( data.noticeClass ) { #> {{ data.noticeClass }} <# } #>">
+		<script id="tmpl-wp-updates-admin-notice" type="text/html">
+			<div <# if ( data.id ) { #>id="{{ data.id }}"<# } #> class="notice {{ data.className }}"><p>{{{ data.message }}}</p></div>
+		</script>
+		<script id="tmpl-wp-bulk-updates-admin-notice" type="text/html">
+			<div id="{{ data.id }}" class="notice <# if ( data.errors ) { #>notice-error<# } else { #>notice-success<# } #>">
 				<p>
-					<# if ( data.message ) { #>
-						{{ data.message }}
-						<# } #>
+					<# if ( data.successes ) { #>
+						<?php printf( __( '%s plugins successfully updated.' ), '{{ data.successes }}' ); ?>
+					<# } #>
+					<# if ( data.errors ) { #>
+						<button class="button-link"><?php printf( __( '%s failures.' ), '{{ data.errors }}' ); ?></button>
+					<# } #>
 				</p>
+				<# if ( data.errors ) { #>
+					<ul class="hidden">
+						<# _.each( data.errorMessages, function( errorMessage ) { #>
+							<li>{{ errorMessage }}</li>
+						<# } ); #>
+					</ul>
+				<# } #>
 			</div>
 		</script>
-	<?php
+		<?php
 	}
 
 	/**
@@ -107,15 +129,24 @@ class Shiny_Updates {
 			return;
 		}
 
+		$plugins = array();
+		foreach ( $GLOBALS['plugins'] as $key => $list ) {
+			$plugins[ $key ] = array_keys( (array) $list );
+		}
+
 		wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
 
 		wp_dequeue_script( 'updates' );
 		wp_enqueue_script( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-updates.js', array( 'jquery', 'wp-util', 'wp-a11y' ), null, true );
 		wp_localize_script( 'shiny-updates', '_wpUpdatesSettings', array(
 			'ajax_nonce' => wp_create_nonce( 'updates' ),
+			'plugins'    => $plugins,
 			'l10n'       => array(
+				'noPlugins'                 => __( 'You do not appear to have any plugins available at this time.' ),
+				'noItemsSelected'           => __( 'Please select at least one item to perform this action on.' ),
 				'updating'                  => __( 'Updating...' ), // No ellipsis.
 				'updated'                   => __( 'Updated!' ),
+				'updateNow'                 => __( 'Update Now' ),
 				'updateFailedShort'         => __( 'Update Failed!' ),
 				/* translators: Error string for a failed update */
 				'updateFailed'              => __( 'Update Failed: %s' ),
@@ -146,17 +177,10 @@ class Shiny_Updates {
 				'installFailedLabel'        => __( '%s installation failed' ),
 				'installingMsg'             => __( 'Installing... please wait.' ),
 				'installedMsg'              => __( 'Installation completed successfully.' ),
-				'aysDelete'                 => __( 'Are you sure you want to delete this plugin?' ),
-				'deletinggMsg'              => __( 'Deleting... please wait.' ),
-				'deletedMsg'                => __( 'Plugin successfully deleted.' ),
-				'updatedPluginsMsg'         => __( 'Plugin updates complete.' ),
-				/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-				'updatedPluginsSuccessMsg'  => __( 'Successes: %d.' ),
-				/* translators: 1. Plugins update successes. 2. Plugin update failures. */
-				'updatedPluginsFailureMsg'  => __( 'Failures: %d.' ),
-				/* translators: 1. Total plugins to update. */
-				'updatePluginsQueuedMsg'    => __( '%d plugin updates queued.' ),
-				'updateQueued'              => __( 'Update queued.' ),
+				'aysDelete'                 => __( 'Are you sure you want to delete this item?' ),
+				'deleting'                  => __( 'Deleting...' ),
+				'deleteFailed'              => __( 'Deletion failed: %s' ),
+				'deleted'                   => __( 'Deleted!' ),
 			),
 		) );
 
