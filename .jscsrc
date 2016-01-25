@@ -1,0 +1,9 @@
+{
+  "excludeFiles" : [
+    ".git/**",
+    "tests/vendor/**",
+    "node_modules/**",
+    "phpcs/**",
+    "wpcs/**"
+  ]
+}
