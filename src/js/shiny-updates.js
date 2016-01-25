@@ -764,7 +764,7 @@ window.wp = window.wp || {};
 				// Remove from views.
 				if ( $themeRow.hasClass( 'inactive' ) ) {
 					totals.disabled--;
-					if ( totals.disabled > 0 ) {
+					if ( totals.disabled ) {
 						$views.find( '.disabled .count' ).text( '(' + totals.disabled + ')' );
 					} else {
 						$views.find( '.disabled' ).remove();
