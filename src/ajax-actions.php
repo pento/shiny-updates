@@ -119,7 +119,7 @@ function wp_ajax_update_theme() {
 
 		$theme = wp_get_theme( $stylesheet );
 		if ( $theme->get( 'Version' ) ) {
-			$status['newVersion'] = sprintf( __( 'Version: %s' ), $theme->get( 'Version' ) );
+			$status['newVersion'] = sprintf( __( 'Version %s' ), $theme->get( 'Version' ) );
 		}
 
 		wp_send_json_success( $status );

@@ -744,17 +744,41 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.deleteThemeSuccess = function( response ) {
-		wp.a11y.speak( wp.updates.l10n.deleted, 'polite' );
-
-		$document.trigger( 'wp-delete-theme-success', response );
+		var $themeRow = $( '[data-slug="' + response.slug + '"]' );
 
 		if ( 'themes-network' === pagenow ) {
 
 			// Removes the theme and updates rows.
-			$( '#' + response.slug + '-update, #' + response.slug ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
-				$( this ).remove();
+			$themeRow.css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+				var $views = $( '.subsubsub' ),
+					totals = window._wpUpdatesSettings.totals;
+
+				$themeRow.remove();
+
+				// Remove plugin from update count.
+				if ( $themeRow.hasClass( 'update' ) ) {
+					totals.upgrades--;
+					wp.updates.decrementCount( 'theme' );
+				}
+
+				// Remove from views.
+				if ( $themeRow.hasClass( 'inactive' ) ) {
+					totals.disabled--;
+					if ( totals.disabled > 0 ) {
+						$views.find( '.disabled .count' ).text( '(' + totals.disabled + ')' );
+					} else {
+						$views.find( '.disabled' ).remove();
+					}
+				}
+
+				// There is always at least one theme available.
+				$views.find( '.all .count' ).text( '(' + --totals.all + ')' );
 			} );
 		}
+
+		wp.a11y.speak( wp.updates.l10n.deleted, 'polite' );
+
+		$document.trigger( 'wp-delete-theme-success', response );
 	};
 
 	/**
@@ -1137,7 +1161,7 @@ window.wp = window.wp || {};
 		 *
 		 * @param {Event} event Event interface.
 		 */
-		$document.on( 'click', '.themes-php.network-admin a[href*="upgrade-theme"]', function( event ) {
+		$document.on( 'click', '.themes-php.network-admin .update-link', function( event ) {
 			var $link = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
