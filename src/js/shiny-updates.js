@@ -334,7 +334,7 @@ window.wp = window.wp || {};
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
-			$message.removeClass( 'updating-message notice-info' ).addClass( 'notice-error' ).find( 'p' ).html( errorMessage );
+			$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' ).find( 'p' ).html( errorMessage );
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$card = $( '.plugin-card-' + response.slug )
