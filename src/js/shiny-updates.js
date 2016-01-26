@@ -1284,6 +1284,11 @@ window.wp = window.wp || {};
 					$( '#bulk-action-notice' ).find( 'ul' ).toggleClass( 'hidden' );
 				} );
 			} );
+
+			// Reset admin notice template after #bulk-action-notice was added.
+			$document.on( 'wp-updates-notice-added', function() {
+				wp.updates.adminNotice = wp.template( 'wp-updates-admin-notice' );
+			} );
 		} );
 
 		/**
