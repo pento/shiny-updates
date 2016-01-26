@@ -334,12 +334,12 @@ window.wp = window.wp || {};
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$message = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-message' );
-			$message.removeClass( 'updating-message notice-info' ).addClass( 'notice-error' ).find( 'p' ).html( errorMessage );
+			$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' ).find( 'p' ).html( errorMessage );
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$card = $( '.plugin-card-' + response.slug )
 				.addClass( 'plugin-card-update-failed' )
-				.append( wp.updates.adminNotice({ className: 'update-message notice-error notice-alt is-dismissible', message: errorMessage }) );
+				.append( wp.updates.adminNotice( { className: 'update-message notice-error notice-alt is-dismissible', message: errorMessage } ) );
 
 			$card.find( '.update-now' )
 				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', response.pluginName ) )
@@ -543,7 +543,7 @@ window.wp = window.wp || {};
 			return;
 		}
 
-		$( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.column-description' ).prepend( wp.updates.adminNotice({ className: 'update-message notice-error notice-alt', message: response.error }) );
+		$( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.column-description' ).prepend( wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: response.error } ) );
 
 		$document.trigger( 'wp-plugin-delete-error', response );
 	};
@@ -790,7 +790,7 @@ window.wp = window.wp || {};
 	 */
 	wp.updates.deleteThemeError = function( response ) {
 		var errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error ),
-			$message     = wp.updates.adminNotice({ className: 'update-message notice-error notice-alt', message: errorMessage } ),
+			$message     = wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: errorMessage } ),
 			$button      = $( '.theme-actions .delete-theme' );
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
@@ -1062,7 +1062,7 @@ window.wp = window.wp || {};
 		 */
 		$filesystemModal.on( 'change', 'input[name="connection_type"]', function() {
 			$( this ).parents( 'form' ).find( '#private_key, #public_key' ).parents( 'label' ).toggle( ( 'ssh' === $( this ).val() ) );
-		}).change();
+		} ).change();
 
 		/**
 		 * Click handler for plugin updates in List Table view.
@@ -1216,7 +1216,7 @@ window.wp = window.wp || {};
 				event.preventDefault();
 				$( 'html, body' ).animate( { scrollTop: 0 } );
 
-				return wp.updates.addAdminNotice({
+				return wp.updates.addAdminNotice( {
 					id: 'no-items-selected',
 					className: 'notice-error is-dismissible',
 					message: wp.updates.l10n.noItemsSelected
@@ -1284,6 +1284,11 @@ window.wp = window.wp || {};
 					$( '#bulk-action-notice' ).find( 'ul' ).toggleClass( 'hidden' );
 				} );
 			} );
+
+			// Reset admin notice template after #bulk-action-notice was added.
+			$document.on( 'wp-updates-notice-added', function() {
+				wp.updates.adminNotice = wp.template( 'wp-updates-admin-notice' );
+			} );
 		} );
 
 		/**
@@ -1306,7 +1311,7 @@ window.wp = window.wp || {};
 				event.preventDefault();
 				$( 'html, body' ).animate( { scrollTop: 0 } );
 
-				return wp.updates.addAdminNotice({
+				return wp.updates.addAdminNotice( {
 					id: 'no-items-selected',
 					className: 'notice-error is-dismissible',
 					message: wp.updates.l10n.noItemsSelected
