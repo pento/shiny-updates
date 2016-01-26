@@ -70,10 +70,6 @@ tr.active.update + tr.plugin-update-tr .plugin-update {
 	background-color: #f7fcfe;
 }
 
-tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .update-message {
-	background-color: #fff8e5;
-}
-
 .plugins .plugin-update-tr .update-message {
 	margin: 5px 20px 15px 31px;
 	padding: 1px 12px 1px 40px;
@@ -154,6 +150,7 @@ div.updated {
 	border-left-color: #ffb900;
 }
 
+tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .notice-warning.notice-alt,
 .notice-warning.notice-alt {
 	background-color: #fff8e5;
 }
@@ -163,6 +160,7 @@ div.error {
 	border-left-color: #dc3232;
 }
 
+tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .notice-error.notice-alt,
 .notice-error.notice-alt {
 	background-color: #fbeaea;
 }
