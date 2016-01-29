@@ -64,7 +64,7 @@ add_action( 'whitelist_options', 'shiny_auto_updates_whitelist_options' );
  * Section description.
  */
 function shiny_auto_updates_description() {
-	esc_html_e( 'A fancy description describing whats going on here.' );
+	esc_html_e( 'A fancy description describing what&#8217;s going on here.' );
 }
 
 /**
