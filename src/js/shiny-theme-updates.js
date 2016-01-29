@@ -38,7 +38,8 @@ window.wp = window.wp || {};
 			'touchend': wp.themes.isInstall ? 'preview' : 'expand',
 			'keyup': 'addFocus',
 			'touchmove': 'preventExpand',
-			'click .theme-install': 'installTheme'
+			'click .theme-install': 'installTheme',
+			'click .theme-update': 'updateTheme'
 		},
 
 		installTheme: function( event ) {
@@ -56,6 +57,45 @@ window.wp = window.wp || {};
 			} );
 
 			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
+		},
+
+		// Single theme overlay screen
+		// It's shown when clicking a theme
+		expand: function( event ) {
+			var self = this;
+
+			event = event || window.event;
+
+			// 'enter' and 'space' keys expand the details view when a theme is :focused
+			if ( 'keydown' === event.type && ( 13 !== event.which && 32 !== event.which ) ) {
+				return;
+			}
+
+			// Bail if the user scrolled on a touch device
+			if ( true === this.touchDrag ) {
+				return this.touchDrag = false;
+			}
+
+			// Prevent the modal from showing when the user clicks
+			// one of the direct action buttons
+			if ( $( event.target ).is( '.theme-actions a, .theme-update button' ) ) {
+				return;
+			}
+
+			// Set focused theme to current element
+			wp.themes.focusedTheme = this.$el;
+
+			this.trigger( 'theme:expand', self.model.cid );
+		},
+
+		updateTheme: function( event ) {
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			wp.updates.updateTheme( $( event.target ).parents( '.theme' ).attr( 'id' ) );
 		}
 	} );
 
