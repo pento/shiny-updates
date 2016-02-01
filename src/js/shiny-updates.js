@@ -561,7 +561,11 @@ window.wp = window.wp || {};
 		if ( 'themes-network' === pagenow ) {
 			$message = $( 'tr[data-slug="' + slug + '"]' ).find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
 		} else {
-			$message = $( '#update-theme' ).closest( '.notice' ).addClass( 'updating-message' );
+			$message = $( '#update-theme' ).closest( '.notice' );
+			if ( ! $message.length ) {
+				$message = $( '[data-slug="' + slug + '"]' ).find( '.update-message' );
+			}
+			$message.addClass( 'updating-message' );
 		}
 
 		if ( $message.html() !== wp.updates.l10n.updating ) {
@@ -584,16 +588,20 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateThemeSuccess = function( response ) {
-		var $message, newText, $themeRow = $( 'tr[data-slug="' + response.slug + '"]' );
+		var $message, newText, $theme = $( '[data-slug="' + response.slug + '"]' );
 
 		if ( 'themes-network' === pagenow ) {
-			$message = $themeRow.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' ).find( 'p' );
+			$message = $theme.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' ).find( 'p' );
 
 			// Update the version number in the row.
-			newText = $themeRow.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
-			$themeRow.find( '.theme-version-author-uri' ).html( newText );
+			newText = $theme.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
+			$theme.find( '.theme-version-author-uri' ).html( newText );
 		} else {
-			$message = $( '.theme-info .notice' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' );
+			$message = $( '.theme-info .notice' );
+			if ( ! $message.length ) {
+				$message = $theme.find( '.update-message' );
+			}
+			$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success is-dismissible' );
 			$( '.theme-version' ).text( response.newVersion );
 		}
 
@@ -602,7 +610,7 @@ window.wp = window.wp || {};
 
 		wp.updates.decrementCount( 'theme' );
 
-		$document.trigger( 'wp-plugin-update-success', response );
+		$document.trigger( 'wp-theme-update-success', response );
 	};
 
 	/**
@@ -613,7 +621,9 @@ window.wp = window.wp || {};
 	 * @param {object} response
 	 */
 	wp.updates.updateThemeError = function( response ) {
-		var $message, errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+		var $theme = $( '[data-slug="' + response.slug + '"]' ),
+			errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
+			$message;
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'update-theme' );
@@ -621,9 +631,13 @@ window.wp = window.wp || {};
 		}
 
 		if ( 'themes-network' === pagenow ) {
-			$message = $( 'tr[data-slug="' + response.slug + '"]' ).find( '.update-message ' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' ).find( 'p' );
+			$message = $theme.find( '.update-message ' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-error' ).find( 'p' );
 		} else {
-			$message = $( '.theme-info .notice' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
+			$message = $( '.theme-info .notice' );
+			if ( ! $message.length ) {
+				$message = $theme.find( '.notice' );
+			}
+			$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
 		}
 
 		$message.text( errorMessage );

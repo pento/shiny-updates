@@ -14,11 +14,12 @@ window.wp = window.wp || {};
 			var data = this.model.toJSON();
 
 			// Render themes using the html template
-			this.$el.html( this.html( data ) ).attr( {
-				tabindex: 0,
-				'aria-describedby': data.id + '-action ' + data.id + '-name',
-				'id': data.id
-			} );
+			this.$el.html( this.html( data ) )
+				.attr( {
+					tabindex: 0,
+					'aria-describedby': data.id + '-action ' + data.id + '-name',
+					'data-slug': data.id
+				} );
 
 			// Renders active theme styles
 			this.activeTheme();
@@ -39,7 +40,7 @@ window.wp = window.wp || {};
 			'keyup': 'addFocus',
 			'touchmove': 'preventExpand',
 			'click .theme-install': 'installTheme',
-			'click .theme-update': 'updateTheme'
+			'click .update-message': 'updateTheme'
 		},
 
 		installTheme: function( event ) {
@@ -78,7 +79,7 @@ window.wp = window.wp || {};
 
 			// Prevent the modal from showing when the user clicks
 			// one of the direct action buttons
-			if ( $( event.target ).is( '.theme-actions a, .theme-update button' ) ) {
+			if ( $( event.target ).is( '.theme-actions a, .update-message, .button-link, .notice-dismiss' ) ) {
 				return;
 			}
 
@@ -89,13 +90,23 @@ window.wp = window.wp || {};
 		},
 
 		updateTheme: function( event ) {
+			var _this = this;
 			event.preventDefault();
+			this.$el.off( 'click', '.update-message' );
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.updateTheme( $( event.target ).parents( '.theme' ).attr( 'id' ) );
+			$( document ).on( 'wp-theme-update-success', function( event, response ) {
+				_this.model.off( 'change', _this.render, _this );
+				if ( _this.model.get( 'id' ) === response.slug ) {
+					_this.model.set( { hasUpdate: false } );
+				}
+				_this.model.on( 'change', _this.render, _this );
+			} );
+
+			wp.updates.updateTheme( $( event.target ).parents( 'div.theme' ).data( 'slug' ) );
 		}
 	} );
 
@@ -109,11 +120,18 @@ window.wp = window.wp || {};
 		},
 
 		updateTheme: function( event ) {
+			var _this = this;
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
 			}
+
+			$( document ).on( 'wp-theme-update-success', function( event, response ) {
+				if ( _this.model.get( 'id' ) === response.slug ) {
+					_this.model.set( { hasUpdate: false } );
+				}
+			} );
 
 			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
 		},

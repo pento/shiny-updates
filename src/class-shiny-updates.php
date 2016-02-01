@@ -263,10 +263,10 @@ class Shiny_Updates {
 					<a class="button button-primary load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}"><?php _e( 'Live Preview' ); ?></a>
 				<# } #>
 
-			</div>å
+			</div>
 
 			<# if ( data.hasUpdate ) { #>
-				<div class="theme-update"><?php _e( 'New version available. <button class="button-link" type="button">Update now</button>' ); ?></div>
+				<div class="update-message notice inline notice-warning notice-alt"><?php _e( 'New version available. <button class="button-link" type="button">Update now</button>' ); ?></div>
 			<# } #>
 		</script>
 	<?php
