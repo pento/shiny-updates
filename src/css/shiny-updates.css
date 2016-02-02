@@ -1,15 +1,39 @@
+.theme .notice,
+.theme .notice.is-dismissible {
+	left: 0;
+	margin: 0;
+	padding-bottom: 14px;
+	padding-top: 14px;
+	position: absolute;
+	right: 0;
+	top: 0;
+}
+
+.theme .update-message:before {
+	color: #ffb900;
+	content: "\f463";
+}
+
 .wrap .notice p:before,
+.theme .notice:before,
 .theme-info .updating-message::before,
 .theme-info .updated-message::before,
 .theme-install.updating-message::before {
+	display: inline-block;
 	font: normal 18px/1 dashicons;
+	-webkit-font-smoothing: antialiased;
 	margin-right: 6px;
+	speak: none;
 	vertical-align: text-bottom;
+}
+
+.theme .update-message {
+	padding-left: 12px;
 }
 
 .theme-info .updating-message:before,
 .theme-install.updating-message:before {
-	color: #d54e21;
+	color: #ffb900;
 	content: "\f463";
 	-webkit-animation: rotation 2s infinite linear;
 	animation: rotation 2s infinite linear;
@@ -19,6 +43,7 @@
 	color: #fff;
 }
 
+.theme .updated-message::before,
 .theme-info .updated-message::before {
 	color: #79ba49;
 	content: '\f147';
@@ -35,7 +60,8 @@
 
 .button.installing::before {
 	-webkit-animation: rotation 2s infinite linear;
-	color: #d54e21;
+	animation: rotation 2s infinite linear;
+	color: #ffb900;
 	content: '\f463';
 	display: inline-block;
 	font: normal 20px/1 'dashicons';
@@ -90,7 +116,7 @@ tr.active.update + tr.plugin-update-tr .plugin-update {
 }
 
 .update-message p:before {
-	color: #d54e21;
+	color: #ffb900;
 	display: inline-block;
 	font: normal 20px/1 dashicons;
 	content: "\f463";
@@ -101,17 +127,20 @@ tr.active.update + tr.plugin-update-tr .plugin-update {
 	vertical-align: top;
 }
 
+.theme .updating-message:before,
 .updating-message p:before {
 	content: "\f463";
 	-webkit-animation: rotation 2s infinite linear;
 	animation: rotation 2s infinite linear;
 }
 
+.theme .notice-success:before,
 .wrap .notice-success p:before {
 	color: #79ba49;
 	content: "\f147";
 }
 
+.theme .notice-error:before,
 .wrap .notice-error p:before {
 	color: #dc3232;
 	content: "\f534";

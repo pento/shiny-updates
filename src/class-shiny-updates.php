@@ -191,6 +191,10 @@ class Shiny_Updates {
 			wp_enqueue_script( 'shiny-theme-updates', plugin_dir_url( __FILE__ ) . 'js/shiny-theme-updates.js', array( 'theme', 'shiny-updates' ), null, true );
 		}
 
+		if ( 'themes.php' === $hook ) {
+			add_action( 'in_admin_header', array( $this, 'theme_templates' ) );
+		}
+
 		if ( 'theme-install.php' === $hook ) {
 			add_action( 'in_admin_header', array( $this, 'theme_install_templates' ) );
 		}
@@ -219,6 +223,53 @@ class Shiny_Updates {
 	 */
 	function admin_footer() {
 		wp_print_request_filesystem_credentials_modal();
+	}
+
+	/**
+	 * Templates here can replace core templates.
+	 */
+	function theme_templates() {
+		?>
+		<script id="tmpl-theme" type="text/template">
+			<# if ( data.screenshot[0] ) { #>
+				<div class="theme-screenshot">
+					<img src="{{ data.screenshot[0] }}" alt="" />
+				</div>
+			<# } else { #>
+				<div class="theme-screenshot blank"></div>
+			<# } #>
+			<span class="more-details" id="{{ data.id }}-action"><?php _e( 'Theme Details' ); ?></span>
+			<div class="theme-author"><?php printf( __( 'By %s' ), '{{{ data.author }}}' ); ?></div>
+
+			<# if ( data.active ) { #>
+				<h2 class="theme-name" id="{{ data.id }}-name">
+					<?php
+					/* translators: %s: theme name */
+					printf( __( '<span>Active:</span> %s' ), '{{{ data.name }}}' );
+					?>
+				</h2>
+			<# } else { #>
+				<h2 class="theme-name" id="{{ data.id }}-name">{{{ data.name }}}</h2>
+			<# } #>
+
+			<div class="theme-actions">
+
+				<# if ( data.active ) { #>
+					<# if ( data.actions.customize ) { #>
+						<a class="button button-primary customize load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}"><?php _e( 'Customize' ); ?></a>
+					<# } #>
+				<# } else { #>
+					<a class="button button-secondary activate" href="{{{ data.actions.activate }}}"><?php _e( 'Activate' ); ?></a>
+					<a class="button button-primary load-customize hide-if-no-customize" href="{{{ data.actions.customize }}}"><?php _e( 'Live Preview' ); ?></a>
+				<# } #>
+
+			</div>
+
+			<# if ( data.hasUpdate ) { #>
+				<div class="update-message notice inline notice-warning notice-alt"><?php _e( 'New version available. <button class="button-link" type="button">Update now</button>' ); ?></div>
+			<# } #>
+		</script>
+	<?php
 	}
 
 	/**

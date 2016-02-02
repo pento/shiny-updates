@@ -14,11 +14,12 @@ window.wp = window.wp || {};
 			var data = this.model.toJSON();
 
 			// Render themes using the html template
-			this.$el.html( this.html( data ) ).attr( {
-				tabindex: 0,
-				'aria-describedby': data.id + '-action ' + data.id + '-name',
-				'id': data.id
-			} );
+			this.$el.html( this.html( data ) )
+				.attr( {
+					tabindex: 0,
+					'aria-describedby': data.id + '-action ' + data.id + '-name',
+					'data-slug': data.id
+				} );
 
 			// Renders active theme styles
 			this.activeTheme();
@@ -38,7 +39,8 @@ window.wp = window.wp || {};
 			'touchend': wp.themes.isInstall ? 'preview' : 'expand',
 			'keyup': 'addFocus',
 			'touchmove': 'preventExpand',
-			'click .theme-install': 'installTheme'
+			'click .theme-install': 'installTheme',
+			'click .update-message': 'updateTheme'
 		},
 
 		installTheme: function( event ) {
@@ -56,6 +58,55 @@ window.wp = window.wp || {};
 			} );
 
 			wp.updates.installTheme( $( event.target ).data( 'slug' ) );
+		},
+
+		// Single theme overlay screen
+		// It's shown when clicking a theme
+		expand: function( event ) {
+			var self = this;
+
+			event = event || window.event;
+
+			// 'enter' and 'space' keys expand the details view when a theme is :focused
+			if ( 'keydown' === event.type && ( 13 !== event.which && 32 !== event.which ) ) {
+				return;
+			}
+
+			// Bail if the user scrolled on a touch device
+			if ( true === this.touchDrag ) {
+				return this.touchDrag = false;
+			}
+
+			// Prevent the modal from showing when the user clicks
+			// one of the direct action buttons
+			if ( $( event.target ).is( '.theme-actions a, .update-message, .button-link, .notice-dismiss' ) ) {
+				return;
+			}
+
+			// Set focused theme to current element
+			wp.themes.focusedTheme = this.$el;
+
+			this.trigger( 'theme:expand', self.model.cid );
+		},
+
+		updateTheme: function( event ) {
+			var _this = this;
+			event.preventDefault();
+			this.$el.off( 'click', '.update-message' );
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			$( document ).on( 'wp-theme-update-success', function( event, response ) {
+				_this.model.off( 'change', _this.render, _this );
+				if ( _this.model.get( 'id' ) === response.slug ) {
+					_this.model.set( { hasUpdate: false } );
+				}
+				_this.model.on( 'change', _this.render, _this );
+			} );
+
+			wp.updates.updateTheme( $( event.target ).parents( 'div.theme' ).data( 'slug' ) );
 		}
 	} );
 
@@ -69,11 +120,18 @@ window.wp = window.wp || {};
 		},
 
 		updateTheme: function( event ) {
+			var _this = this;
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
 			}
+
+			$( document ).on( 'wp-theme-update-success', function( event, response ) {
+				if ( _this.model.get( 'id' ) === response.slug ) {
+					_this.model.set( { hasUpdate: false } );
+				}
+			} );
 
 			wp.updates.updateTheme( $( event.target ).data( 'slug' ) );
 		},
