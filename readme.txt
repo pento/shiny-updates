@@ -1,5 +1,5 @@
 === Shiny Updates ===
-Contributors: obenland, adamsilverstein, michaelarestad, mapk
+Contributors: obenland, adamsilverstein, michaelarestad, mapk, j-falk, kraftbj, ipstenu, ethitter
 Tags: updates, admin, feature-plugin, plugin, theme, multisite, network, auto-updates
 Requires at least: 4.4
 Tested up to: 4.5
