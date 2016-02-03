@@ -9,6 +9,9 @@
 	top: 0;
 }
 
+.plugin-update-tr .update-message:before,
+.plugin-card .update-now:before,
+.plugin-card .install-now:before,
 .theme .update-message:before {
 	color: #ffb900;
 	content: "\f463";
