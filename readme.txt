@@ -3,7 +3,6 @@ Contributors: obenland, adamsilverstein, michaelarestad, mapk, j-falk, kraftbj, 
 Tags: updates, admin, feature-plugin, plugin, theme, multisite, network, auto-updates
 Requires at least: 4.4
 Tested up to: 4.5
-Stable tag: 2
 License: GPLv2 or later
 
 A smoother experience for managing plugins and themes.
