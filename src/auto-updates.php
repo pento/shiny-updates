@@ -9,33 +9,32 @@
  * Register form setting for auto updates.
  */
 function shiny_auto_updates() {
-	add_settings_section( 'shiny_auto_updates', __( 'Automatic Updates' ), 'shiny_auto_updates_description', 'shiny_auto_updates' );
-
-	if ( ! class_exists( 'WP_Automatic_Updater' ) ) {
-		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-	}
-
+	require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 	$updater = new WP_Automatic_Updater;
 
-	if ( ! $updater->is_disabled() ) {
-		add_settings_field( 'shiny_wordpress_auto_updates', __( 'WordPress' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
-			'label_for'   => 'wp_auto_update_core',
-			'label'       => __( 'Update WordPress automatically.' ),
-			'description' => __( 'Minor versions of WordPress are automatically updated by default.' ),
-		) );
-		add_settings_field( 'shiny_plugin_auto_updates', __( 'Plugins' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
-			'label_for' => 'wp_auto_update_plugins',
-			'label'     => __( 'Update plugins automatically.' ),
-		) );
-		add_settings_field( 'shiny_theme_auto_updates', __( 'Themes' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
-			'label_for' => 'wp_auto_update_themes',
-			'label'     => __( 'Update themes automatically.' ),
-		) );
+	add_settings_section( 'shiny_auto_updates', __( 'Automatic Updates' ), 'shiny_auto_updates_description', 'shiny_auto_updates' );
 
-		add_filter( 'sanitize_option_wp_auto_update_core', 'absint' );
-		add_filter( 'sanitize_option_wp_auto_update_plugins', 'absint' );
-		add_filter( 'sanitize_option_wp_auto_update_themes', 'absint' );
+	if ( $updater->is_disabled() ) {
+		return;
 	}
+
+	add_settings_field( 'shiny_wordpress_auto_updates', __( 'WordPress' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
+		'label_for'   => 'wp_auto_update_core',
+		'label'       => __( 'Update WordPress automatically.' ),
+		'description' => __( 'Minor versions of WordPress are automatically updated by default.' ),
+	) );
+	add_settings_field( 'shiny_plugin_auto_updates', __( 'Plugins' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
+		'label_for' => 'wp_auto_update_plugins',
+		'label'     => __( 'Update plugins automatically.' ),
+	) );
+	add_settings_field( 'shiny_theme_auto_updates', __( 'Themes' ), 'shiny_auto_updates_checkbox_field', 'shiny_auto_updates', 'shiny_auto_updates', array(
+		'label_for' => 'wp_auto_update_themes',
+		'label'     => __( 'Update themes automatically.' ),
+	) );
+
+	add_filter( 'sanitize_option_wp_auto_update_core',    'absint' );
+	add_filter( 'sanitize_option_wp_auto_update_plugins', 'absint' );
+	add_filter( 'sanitize_option_wp_auto_update_themes',  'absint' );
 }
 add_action( 'load-update-core.php', 'shiny_auto_updates' );
 
@@ -72,7 +71,13 @@ add_action( 'whitelist_options', 'shiny_auto_updates_whitelist_options' );
  * Section description.
  */
 function shiny_auto_updates_description() {
-	esc_html_e( 'A fancy description describing what&#8217;s going on here.' );
+	$updater = new WP_Automatic_Updater;
+
+	if ( $updater->is_disabled() ) {
+		esc_html_e( 'Due to your site&#8217;s configuration, automatic updates are not available.' );
+	} else {
+		esc_html_e( 'A fancy description describing what&#8217;s going on here.' );
+	}
 }
 
 /**
@@ -99,18 +104,15 @@ function shiny_auto_updates_render() {
 
 	if ( $updater->is_disabled() ) {
 		do_settings_sections( 'shiny_auto_updates' );
-
-		?>
-		<p><?php esc_html_e( 'Due to your site&#8217;s configuration, automattic updates are not available.' ); ?></p>
-		<?php
-	} else {
-		$action = is_network_admin() ? 'update-core.php?action=auto-updates' : 'options.php';
-		printf( '<form method="post" action="%s">', esc_url( $action ) );
-		settings_fields( 'shiny_auto_updates' );
-		do_settings_sections( 'shiny_auto_updates' );
-		submit_button();
-		echo '</form>';
+		return;
 	}
+
+	$action = is_network_admin() ? 'update-core.php?action=auto-updates' : 'options.php';
+	printf( '<form method="post" action="%s">', esc_url( $action ) );
+	settings_fields( 'shiny_auto_updates' );
+	do_settings_sections( 'shiny_auto_updates' );
+	submit_button();
+	echo '</form>';
 }
 add_action( 'core_upgrade_preamble', 'shiny_auto_updates_render' );
 
