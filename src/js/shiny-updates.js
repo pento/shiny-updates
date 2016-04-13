@@ -606,6 +606,7 @@ window.wp = window.wp || {};
 			}
 			$message.removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success is-dismissible' );
 			$( '.theme-version' ).text( response.newVersion );
+			$( 'body.modal-open' ).length ? $( '.load-customize:visible' ).focus() : $theme.find( '.load-customize' ).focus();
 		}
 
 		$message.text( wp.updates.l10n.updated );
@@ -641,6 +642,7 @@ window.wp = window.wp || {};
 				$message = $theme.find( '.notice' );
 			}
 			$message.removeClass( 'updating-message notice-warning' ).addClass( 'notice-error is-dismissible' );
+			$( 'body.modal-open' ).length ? $( '.load-customize:visible' ).focus() : $theme.find( '.load-customize' ).focus();
 		}
 
 		$message.text( errorMessage );
