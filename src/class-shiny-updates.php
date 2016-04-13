@@ -238,6 +238,11 @@ class Shiny_Updates {
 			<# } else { #>
 				<div class="theme-screenshot blank"></div>
 			<# } #>
+
+			<# if ( data.hasUpdate ) { #>
+				<div class="update-message notice inline notice-warning notice-alt"><?php _e( 'New version available. <button class="button-link" type="button">Update now</button>' ); ?></div>
+			<# } #>
+
 			<span class="more-details" id="{{ data.id }}-action"><?php _e( 'Theme Details' ); ?></span>
 			<div class="theme-author"><?php printf( __( 'By %s' ), '{{{ data.author }}}' ); ?></div>
 
@@ -264,10 +269,6 @@ class Shiny_Updates {
 				<# } #>
 
 			</div>
-
-			<# if ( data.hasUpdate ) { #>
-				<div class="update-message notice inline notice-warning notice-alt"><?php _e( 'New version available. <button class="button-link" type="button">Update now</button>' ); ?></div>
-			<# } #>
 		</script>
 	<?php
 	}
