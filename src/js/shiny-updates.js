@@ -309,6 +309,7 @@ window.wp = window.wp || {};
 		$updateMessage
 			.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', response.pluginName ) )
 			.text( wp.updates.l10n.updated );
+		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
 
 		wp.updates.decrementCount( 'plugin' );
 
@@ -359,6 +360,8 @@ window.wp = window.wp || {};
 				}, 200 );
 			} );
 		}
+
+		wp.a11y.speak( errorMessage, 'assertive' );
 
 		$document.trigger( 'wp-plugin-update-error', response );
 	};
