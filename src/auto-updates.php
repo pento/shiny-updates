@@ -86,13 +86,17 @@ function shiny_auto_updates_description() {
  * @param array $args Extra arguments used when outputting the field.
  */
 function shiny_auto_updates_checkbox_field( $args ) {
+	$labelled_by = $args['label_for'];
+	if ( ! empty( $args['description'] ) ) {
+		$labelled_by .= " {$args['label_for']}_description";
+	}
 	?>
 	<label for="<?php echo esc_attr( $args['label_for'] ); ?>">
-		<input type="checkbox" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( $args['label_for'] ); ?>" value="1" <?php checked( get_site_option( $args['label_for'], false ) ); ?> />
+		<input type="checkbox" id="<?php echo esc_attr( $args['label_for'] ); ?>" name="<?php echo esc_attr( $args['label_for'] ); ?>" value="1" <?php checked( get_site_option( $args['label_for'], false ) ); ?> aria-labelledby="<?php echo esc_attr( $labelled_by ); ?>" />
 		<?php echo esc_html( $args['label'] ); ?>
 	</label>
 	<?php if ( ! empty( $args['description'] ) ) : ?>
-		<p class="description"><?php echo esc_html( $args['description'] ); ?></p>
+		<p id="<?php echo esc_attr( $args['label_for'] . '_description' ); ?>" class="description"><?php echo esc_html( $args['description'] ); ?></p>
 	<?php endif;
 }
 
