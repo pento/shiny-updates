@@ -152,10 +152,10 @@ window.wp = window.wp || {};
 
 			$( document ).one( 'wp-delete-theme-success', function( event, response ) {
 				_this.$el.find( '.close' ).trigger( 'click' );
-				$( '#' + response.slug ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+				$( '[data-slug="' + response.slug + '"' ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
 					$( this ).remove();
 					_collection.remove( _this.model );
-					_collection.trigger( 'update' );
+					_collection.trigger( 'themes:update' );
 				} );
 			} );
 
