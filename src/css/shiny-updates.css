@@ -26,6 +26,11 @@
 	color: #fff;
 }
 
+.plugin-card .updated-message:before {
+	color: #79ba49;
+	content: '\f147';
+}
+
 .theme-install-php .theme .notice-error {
 	display: block;
 	left: 0;
