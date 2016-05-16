@@ -63,6 +63,12 @@ class Shiny_Updates {
 
 		// Plugin modal installations.
 		add_action( 'install_plugins_pre_plugin-information', array( $this, 'install_plugin_information' ), 9 );
+
+		// Translation updates.
+		add_action( 'wp_ajax_update-translations', 'wp_ajax_update_translations', -1 );
+
+		// Core updates.
+		add_action( 'wp_ajax_update-core', 'wp_ajax_update_core', -1 );
 	}
 
 	/**
@@ -111,7 +117,14 @@ class Shiny_Updates {
 	 * @param string $hook Current admin page.
 	 */
 	function enqueue_scripts( $hook ) {
-		if ( ! in_array( $hook, array( 'plugins.php', 'plugin-install.php', 'themes.php', 'theme-install.php' ), true ) ) {
+		if ( ! in_array( $hook, array(
+			'plugins.php',
+			'plugin-install.php',
+			'themes.php',
+			'theme-install.php',
+			'update-core.php',
+		), true )
+		) {
 			return;
 		}
 
@@ -135,47 +148,48 @@ class Shiny_Updates {
 			'plugins'    => $plugins,
 			'totals'     => $totals,
 			'l10n'       => array(
-				'searchResults'             => __( 'Search results for &#8220;%s&#8221;' ),
-				'noPlugins'                 => __( 'You do not appear to have any plugins available at this time.' ),
-				'noItemsSelected'           => __( 'Please select at least one item to perform this action on.' ),
-				'updating'                  => __( 'Updating...' ), // No ellipsis.
-				'updated'                   => __( 'Updated!' ),
-				'updateNow'                 => __( 'Update Now' ),
-				'updateFailedShort'         => __( 'Update Failed!' ),
+				'searchResults'      => __( 'Search results for &#8220;%s&#8221;' ),
+				'noPlugins'          => __( 'You do not appear to have any plugins available at this time.' ),
+				'noItemsSelected'    => __( 'Please select at least one item to perform this action on.' ),
+				'updating'           => __( 'Updating...' ), // No ellipsis.
+				'updated'            => __( 'Updated!' ),
+				'update'             => __( 'Update' ),
+				'updateNow'          => __( 'Update Now' ),
+				'updateFailedShort'  => __( 'Update Failed!' ),
 				/* translators: Error string for a failed update */
-				'updateFailed'              => __( 'Update Failed: %s' ),
+				'updateFailed'       => __( 'Update Failed: %s' ),
 				/* translators: Plugin name and version */
-				'updatingLabel'             => __( 'Updating %s...' ), // No ellipsis.
+				'updatingLabel'      => __( 'Updating %s...' ), // No ellipsis.
 				/* translators: Plugin name and version */
-				'updatedLabel'              => __( '%s updated!' ),
+				'updatedLabel'       => __( '%s updated!' ),
 				/* translators: Plugin name and version */
-				'updateFailedLabel'         => __( '%s update failed' ),
+				'updateFailedLabel'  => __( '%s update failed' ),
 				/* translators: JavaScript accessible string */
-				'updatingMsg'               => __( 'Updating... please wait.' ), // No ellipsis.
+				'updatingMsg'        => __( 'Updating... please wait.' ), // No ellipsis.
 				/* translators: JavaScript accessible string */
-				'updatedMsg'                => __( 'Update completed successfully.' ),
+				'updatedMsg'         => __( 'Update completed successfully.' ),
 				/* translators: JavaScript accessible string */
-				'updateCancel'              => __( 'Update canceled.' ),
-				'beforeunload'              => __( 'Plugin updates may not complete if you navigate away from this page.' ),
-				'installNow'                => __( 'Install Now' ),
-				'installing'                => __( 'Installing...' ),
-				'installed'                 => __( 'Installed!' ),
-				'installFailedShort'        => __( 'Install Failed!' ),
+				'updateCancel'       => __( 'Update canceled.' ),
+				'beforeunload'       => __( 'Plugin updates may not complete if you navigate away from this page.' ),
+				'installNow'         => __( 'Install Now' ),
+				'installing'         => __( 'Installing...' ),
+				'installed'          => __( 'Installed!' ),
+				'installFailedShort' => __( 'Install Failed!' ),
 				/* translators: Error string for a failed installation. */
-				'installFailed'             => __( 'Installation failed: %s' ),
+				'installFailed'      => __( 'Installation failed: %s' ),
 				/* translators: Plugin/Theme name and version */
-				'installingLabel'           => __( 'Installing %s...' ), // no ellipsis
+				'installingLabel'    => __( 'Installing %s...' ), // no ellipsis
 				/* translators: Plugin/Theme name and version */
-				'installedLabel'            => __( '%s installed!' ),
+				'installedLabel'     => __( '%s installed!' ),
 				/* translators: Plugin/Theme name and version */
-				'installFailedLabel'        => __( '%s installation failed' ),
-				'installingMsg'             => __( 'Installing... please wait.' ),
-				'installedMsg'              => __( 'Installation completed successfully.' ),
+				'installFailedLabel' => __( '%s installation failed' ),
+				'installingMsg'      => __( 'Installing... please wait.' ),
+				'installedMsg'       => __( 'Installation completed successfully.' ),
 				/* translators: Plugin name */
-				'aysDelete'                 => __( 'Are you sure you want to delete %s?' ),
-				'deleting'                  => __( 'Deleting...' ),
-				'deleteFailed'              => __( 'Deletion failed: %s' ),
-				'deleted'                   => __( 'Deleted!' ),
+				'aysDelete'          => __( 'Are you sure you want to delete %s?' ),
+				'deleting'           => __( 'Deleting...' ),
+				'deleteFailed'       => __( 'Deletion failed: %s' ),
+				'deleted'            => __( 'Deleted!' ),
 			),
 		) );
 
@@ -333,7 +347,7 @@ class Shiny_Updates {
 				</div>
 			</div>
 			<div class="wp-full-overlay-main">
-				<iframe src="{{ data.preview_url }}" title="<?php esc_attr_e( 'Preview' ); ?>" />
+				<iframe src="{{ data.preview_url }}" title="<?php esc_attr_e( 'Preview' ); ?>"></iframe>
 			</div>
 		</script>
 	<?php

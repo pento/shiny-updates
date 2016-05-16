@@ -16,6 +16,7 @@ function su_new_update_rows() {
 	add_action( 'admin_init', 'su_plugin_update_rows' );
 	add_action( 'admin_init', 'su_theme_update_rows' );
 }
+
 add_action( 'admin_init', 'su_new_update_rows', 1 );
 
 /**
@@ -187,7 +188,7 @@ function su_theme_update_row( $theme_key, $theme ) {
 
 	$wp_list_table = _get_list_table( 'WP_MS_Themes_List_Table' );
 
-	$active = $theme->is_allowed( 'network' ) ? ' active': '';
+	$active = $theme->is_allowed( 'network' ) ? ' active' : '';
 
 	echo '<tr class="plugin-update-tr' . $active . '" id="' . esc_attr( $theme->get_stylesheet() . '-update' ) . '" data-slug="' . esc_attr( $theme->get_stylesheet() ) . '"><td colspan="' . $wp_list_table->get_column_count() . '" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>';
 	if ( ! current_user_can( 'update_themes' ) ) {
@@ -239,3 +240,26 @@ function su_theme_update_row( $theme_key, $theme ) {
 
 	echo '</p></div></td></tr>';
 }
+
+/**
+ * Displays the shiny update table.
+ *
+ * Includes core, plugin and theme updates.
+ */
+function su_update_table() {
+	?>
+	<div class="shiny-update-table">
+		<h2><?php _e( 'Available Updates' ); ?></h2>
+		<?php
+		require_once( 'class-shiny-updates-list-table.php' );
+
+		// Todo: Use _get_list_table().
+		$updates_table = new Shiny_Updates_List_Table();
+		$updates_table->prepare_items();
+		$updates_table->display();
+		?>
+	</div>
+	<?php
+}
+
+add_action( 'core_upgrade_preamble', 'su_update_table' );

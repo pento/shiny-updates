@@ -1,8 +1,7 @@
-/* global pagenow */
-window.wp = window.wp || {};
-
 (function( $, wp ) {
 	var $document = $( document );
+
+	wp = wp || {};
 
 	/**
 	 * The WP Updates object.
@@ -106,7 +105,7 @@ window.wp = window.wp || {};
 	 *
 	 * @type {jQuery}
 	 */
-	wp.updates.$elToReturnFocusToFromCredentialsModal;
+	wp.updates.$elToReturnFocusToFromCredentialsModal = undefined;
 
 	/**
 	 * Adds or updates an admin notice.
@@ -258,7 +257,6 @@ window.wp = window.wp || {};
 			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
 			$message   = $updateRow.find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
 			message    = wp.updates.l10n.updatingLabel.replace( '%s', $updateRow.find( '.plugin-title strong' ).text() );
-
 		} else if ( 'plugin-install' === pagenow ) {
 			$card    = $( '.plugin-card-' + slug );
 			$message = $card.find( '.update-now' ).addClass( 'updating-message' );
@@ -266,6 +264,10 @@ window.wp = window.wp || {};
 
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
+		} else if ( 'update-core' === pagenow ) {
+			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
+			$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
+			message    = wp.updates.l10n.updatingLabel.replace( '%s', $message.data( 'name' ) );
 		}
 
 		if ( ! wp.updates.updateLock ) {
@@ -310,6 +312,8 @@ window.wp = window.wp || {};
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+		} else if ( 'update-core' === pagenow ) {
+			$updateMessage = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
 		}
 
 		$updateMessage
@@ -370,6 +374,12 @@ window.wp = window.wp || {};
 						.text( wp.updates.l10n.updateNow );
 				}, 200 );
 			} );
+		} else if ( 'update-core' === pagenow ) {
+			$message = $( 'tr[data-plugin="' + response.plugin ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+
+			setTimeout( function() {
+				$message.text( wp.updates.l10n.update );
+			}, 500 );
 		}
 
 		wp.a11y.speak( errorMessage, 'assertive' );
@@ -585,6 +595,8 @@ window.wp = window.wp || {};
 
 		if ( 'themes-network' === pagenow ) {
 			$notice = $( '[data-slug="' + slug + '"]' ).find( '.update-message' );
+		} else if ( 'update-core' === pagenow ) {
+			$notice = $( '[data-slug="' + slug + '"]' ).find( '.update-link' );
 		} else {
 			$notice = $( '#update-theme' ).closest( '.notice' );
 			if ( ! $notice.length ) {
@@ -628,6 +640,12 @@ window.wp = window.wp || {};
 			// Update the version number in the row.
 			newText = $theme.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
 			$theme.find( '.theme-version-author-uri' ).html( newText );
+		} else if ( 'update-core' === pagenow ) {
+			$notice = $( 'tr[data-slug="' + response.slug + '"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+
+			$notice
+				.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', response.pluginName ) )
+				.text( wp.updates.l10n.updated );
 		} else {
 			$notice = $( '.theme-info .notice' );
 			if ( ! $notice.length ) {
@@ -677,6 +695,12 @@ window.wp = window.wp || {};
 
 		if ( 'themes-network' === pagenow ) {
 			$notice = $theme.find( '.update-message ' );
+		} else if ( 'update-core' === pagenow ) {
+			$notice = $( 'tr[data-slug="' + response.slug ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+
+			setTimeout( function() {
+				$notice.text( wp.updates.l10n.update );
+			}, 500 );
 		} else {
 			$notice = $( '.theme-info .notice' );
 			if ( ! $notice.length ) {
@@ -876,6 +900,155 @@ window.wp = window.wp || {};
 		wp.a11y.speak( errorMessage, 'assertive' );
 
 		$document.trigger( 'wp-theme-delete-error', response );
+	};
+
+	/**
+	 * Send an Ajax request to the server to update translations.
+	 *
+	 * @since 4.X.0
+	 */
+	wp.updates.updateTranslations = function() {
+		var $updateRow, $message, message;
+
+		$updateRow = $( 'tr[data-type="translation"]' );
+		$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
+		message    = wp.updates.l10n.updatingMsg;
+
+		if ( ! wp.updates.updateLock ) {
+			$message.attr( 'aria-label', message );
+
+			if ( $message.html() !== wp.updates.l10n.updating ) {
+				$message.data( 'originaltext', $message.html() );
+			}
+
+			$message.text( wp.updates.l10n.updating );
+
+			$document.trigger( 'wp-translations-updating' );
+		}
+
+		wp.updates.ajax( 'update-translations', {} )
+			.done( wp.updates.updateTranslationsSuccess )
+			.fail( wp.updates.updateTranslationsError );
+	};
+
+	/**
+	 * On a successful translations update, update the UI with the result.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateTranslationsSuccess = function( response ) {
+		var $updateMessage = $( 'tr[data-type="translation"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+
+		$updateMessage.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
+
+		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
+
+		wp.updates.decrementCount( 'translations' );
+
+		$document.trigger( 'wp-translations-update-success', response );
+	};
+
+	/**
+	 * On a translations update error, update the UI appropriately.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateTranslationsError = function( response ) {
+		var errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
+		    $message = $( 'tr[data-type="translation"]' ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
+			wp.updates.credentialError( response, 'update-translations' );
+			return;
+		}
+
+		setTimeout( function() {
+			$message.text( wp.updates.l10n.update );
+		}, 500 );
+
+		wp.a11y.speak( errorMessage, 'assertive' );
+
+		$document.trigger( 'wp-translations-update-error', response );
+	};
+
+	/**
+	 * Send an Ajax request to the server to update core itself.
+	 *
+	 * @since 4.X.0
+	 */
+	wp.updates.updateCore = function() {
+		var $updateRow, $message, message;
+
+		$updateRow = $( 'tr[data-type="core"]' );
+		$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
+		message    = wp.updates.l10n.updatingMsg;
+
+		if ( ! wp.updates.updateLock ) {
+			$message.attr( 'aria-label', message );
+
+			if ( $message.html() !== wp.updates.l10n.updating ) {
+				$message.data( 'originaltext', $message.html() );
+			}
+
+			$message.text( wp.updates.l10n.updating );
+
+			$document.trigger( 'wp-core-updating' );
+		}
+
+		wp.updates.ajax( 'update-core', {
+			version: $updateRow.data( 'version' ),
+			locale:  $updateRow.data( 'locale' )
+		} )
+			.done( wp.updates.updateCoreSuccess )
+			.fail( wp.updates.updateCoreError );
+	};
+
+	/**
+	 * On a successful core update, update the UI appropriately and redirect to the about page.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateCoreSuccess = function( response ) {
+		var $updateMessage = $( 'tr[data-type="core"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+
+		$updateMessage.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
+
+		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
+
+		$document.trigger( 'wp-core-update-success', response );
+
+		window.location = response.redirect;
+	};
+
+	/**
+	 * On a core update error, update the UI appropriately.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateCoreError = function( response ) {
+		var errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
+		    $message = $( 'tr[data-type="core"]' ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
+			wp.updates.credentialError( response, 'update-core' );
+			return;
+		}
+
+		setTimeout( function() {
+			$message.text( wp.updates.l10n.update );
+		}, 500 );
+
+		wp.a11y.speak( errorMessage, 'assertive' );
+
+		$document.trigger( 'wp-core-update-error', response );
 	};
 
 	/**
@@ -1080,7 +1253,7 @@ window.wp = window.wp || {};
 	};
 
 	$( function() {
-		var $theList         = $( '#the-list' ),
+		var $theList         = $( '.wp-list-table:not(.updates)' ),
 			$bulkActionForm  = $( '#bulk-action-form' ),
 			$filesystemModal = $( '#request-filesystem-credentials-dialog' );
 
@@ -1221,6 +1394,26 @@ window.wp = window.wp || {};
 			}
 
 			wp.updates.deletePlugin( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
+		} );
+
+		/**
+		 * Click handler for theme updates in List Table view.
+		 *
+		 * @since 4.2.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$theList.on( 'click', '[data-type="theme"] .update-link', function( event ) {
+			var $themeRow = $( event.target ).parents( 'tr' );
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			// Return the user to the input box of the theme's table row after closing the modal.
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $themeRow.find( '.check-column input' );
+			wp.updates.updateTheme( $themeRow.data( 'slug' ) );
 		} );
 
 		/**
@@ -1427,6 +1620,42 @@ window.wp = window.wp || {};
 		} );
 
 		/**
+		 * Click handler for updates in the Update List Table view.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$document.on( 'click', '.wp-list-table.updates .update-link', function( event ) {
+			var $itemRow   = $( event.target ).parents( 'tr' ),
+			    updateType = $itemRow.data( 'type' );
+
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			// Return the user back to where he left off after closing the modal.
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $( event.target );
+
+			switch ( updateType ) {
+				case 'plugin':
+					wp.updates.updatePlugin( $itemRow.data( 'plugin' ), $itemRow.data( 'slug' ) );
+					break;
+				case 'theme':
+					wp.updates.updateTheme( $itemRow.data( 'slug' ) );
+					break;
+				case 'translation':
+					wp.updates.updateTranslations();
+					break;
+				case 'core':
+					wp.updates.updateCore();
+					break;
+			}
+		} );
+
+		/**
 		 * Handle events after the credential modal was closed.
 		 *
 		 * @since 4.X.0
@@ -1548,118 +1777,117 @@ window.wp = window.wp || {};
 		$( '#typeselector' ).on( 'change', function() {
 			$( 'input.wp-filter-search' ).trigger( 'search' );
 		} );
-	} );
 
-	/**
-	 * Update plugin from the details modal on `plugin-install.php`.
-	 *
-	 * @since 4.2.0
-	 *
-	 * @param {Event} event Event interface.
-	 */
-	$( '#plugin_update_from_iframe' ).on( 'click', function( event ) {
-		var target = window.parent === window ? null : window.parent,
-			job;
+		/**
+		 * Update plugin from the details modal on `plugin-install.php`.
+		 *
+		 * @since 4.2.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$( '#plugin_update_from_iframe' ).on( 'click', function( event ) {
+			var target = window.parent === window ? null : window.parent,
+			    job;
 
-		$.support.postMessage = !! window.postMessage;
+			$.support.postMessage = !! window.postMessage;
 
-		if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
-			return;
-		}
-
-		event.preventDefault();
-
-		job = {
-			action: 'updatePlugin',
-			type: 'update-plugin',
-			data: {
-				plugin: $( this ).data( 'plugin' ),
-				slug: $( this ).data( 'slug' )
+			if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
+				return;
 			}
-		};
 
-		target.postMessage( JSON.stringify( job ), window.location.origin );
-	} );
+			event.preventDefault();
 
-	/**
-	 * Install plugin from the details modal on `plugin-install.php`.
-	 *
-	 * @since 4.X.0
-	 *
-	 * @param {Event} event Event interface.
-	 */
-	$( '#plugin_install_from_iframe' ).on( 'click', function( event ) {
-		var target = window.parent === window ? null : window.parent,
-			job;
+			job = {
+				action: 'updatePlugin',
+				type: 'update-plugin',
+				data: {
+					plugin: $( this ).data( 'plugin' ),
+					slug: $( this ).data( 'slug' )
+				}
+			};
 
-		$.support.postMessage = !! window.postMessage;
+			target.postMessage( JSON.stringify( job ), window.location.origin );
+		} );
 
-		if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
-			return;
-		}
+		/**
+		 * Install plugin from the details modal on `plugin-install.php`.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$( '#plugin_install_from_iframe' ).on( 'click', function( event ) {
+			var target = window.parent === window ? null : window.parent,
+			    job;
 
-		event.preventDefault();
+			$.support.postMessage = !! window.postMessage;
 
-		job = {
-			action: 'installPlugin',
-			type: 'install-plugin',
-			data: {
-				slug: $( this ).data( 'slug' )
+			if ( false === $.support.postMessage || null === target || -1 !== window.parent.location.pathname.indexOf( 'update-core.php' ) ) {
+				return;
 			}
-		};
 
-		target.postMessage( JSON.stringify( job ), window.location.origin );
+			event.preventDefault();
+
+			job = {
+				action: 'installPlugin',
+				type: 'install-plugin',
+				data: {
+					slug: $( this ).data( 'slug' )
+				}
+			};
+
+			target.postMessage( JSON.stringify( job ), window.location.origin );
+		} );
+
+		/**
+		 * Handles postMessage events.
+		 *
+		 * @since 4.2.0
+		 * @since 4.X.0 Switched `update-plugin` action to use the updateQueue.
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$( window ).on( 'message', function( event ) {
+			var originalEvent  = event.originalEvent,
+			    expectedOrigin = document.location.protocol + '//' + document.location.hostname,
+			    message;
+
+			if ( originalEvent.origin !== expectedOrigin ) {
+				return;
+			}
+
+			message = $.parseJSON( originalEvent.data );
+
+			if ( 'undefined' === typeof message.action ) {
+				return;
+			}
+
+			switch ( message.action ) {
+				/*
+				 * Called from `wp-admin/includes/class-wp-upgrader-skins.php`.
+				 * @todo Check if that can be removed once this plugin was merged.
+				 */
+				case 'decrementUpdateCount':
+					wp.updates.decrementCount( message.upgradeType );
+					break;
+
+				case 'updatePlugin':
+				case 'installPlugin':
+					/* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
+					window.tb_remove();
+					/* jscs:enable */
+
+					wp.updates.updateQueue.push( message );
+					wp.updates.queueChecker();
+					break;
+			}
+		} );
+
+		/**
+		 * Adds a callback to display a warning before leaving the page.
+		 *
+		 * @since 4.2.0
+		 */
+		$( window ).on( 'beforeunload', wp.updates.beforeunload );
 	} );
-
-	/**
-	 * Handles postMessage events.
-	 *
-	 * @since 4.2.0
-	 * @since 4.X.0 Switched `update-plugin` action to use the updateQueue.
-	 *
-	 * @param {Event} event Event interface.
-	 */
-	$( window ).on( 'message', function( event ) {
-		var originalEvent  = event.originalEvent,
-			expectedOrigin = document.location.protocol + '//' + document.location.hostname,
-			message;
-
-		if ( originalEvent.origin !== expectedOrigin ) {
-			return;
-		}
-
-		message = $.parseJSON( originalEvent.data );
-
-		if ( 'undefined' === typeof message.action ) {
-			return;
-		}
-
-		switch ( message.action ) {
-			/*
-			 * Called from `wp-admin/includes/class-wp-upgrader-skins.php`.
-			 * @todo Check if that can be removed once this plugin was merged.
-			 */
-			case 'decrementUpdateCount':
-				wp.updates.decrementCount( message.upgradeType );
-				break;
-
-			case 'updatePlugin':
-			case 'installPlugin':
-				/* jscs:disable requireCamelCaseOrUpperCaseIdentifiers */
-				window.tb_remove();
-				/* jscs:enable */
-
-				wp.updates.updateQueue.push( message );
-				wp.updates.queueChecker();
-				break;
-		}
-	} );
-
-	/**
-	 * Adds a callback to display a warning before leaving the page.
-	 *
-	 * @since 4.2.0
-	 */
-	$( window ).on( 'beforeunload', wp.updates.beforeunload );
-
 } )( jQuery, window.wp );
