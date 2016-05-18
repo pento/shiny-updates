@@ -57,14 +57,14 @@
 	 *                                                         Default 'false'.
 	 */
 	wp.updates.filesystemCredentials = {
-		ftp: {
-			host: '',
-			username: '',
-			password: '',
+		ftp:       {
+			host:           '',
+			username:       '',
+			password:       '',
 			connectionType: ''
 		},
-		ssh: {
-			publicKey: '',
+		ssh:       {
+			publicKey:  '',
 			privateKey: ''
 		},
 		available: false
@@ -119,7 +119,7 @@
 	 */
 	wp.updates.addAdminNotice = function( data ) {
 		var $notices     = $( '.wrap' ),
-			$adminNotice = wp.updates.adminNotice( data );
+		    $adminNotice = wp.updates.adminNotice( data );
 
 		if ( $notices.find( '#' + data.id ).length ) {
 			$notices.find( '#' + data.id ).replaceWith( $adminNotice );
@@ -137,9 +137,12 @@
 	 *
 	 * @param {string} action The type of Ajax request ('update-plugin', 'install-theme', etc).
 	 * @param {object} data   Data that needs to be passed to the ajax callback.
-	 * @return {Deferred} Deferred object to register callbacks.
+	 * @return {$.promise}    A jQuery promise that represents the request,
+	 *                        decorated with an abort() method.
 	 */
 	wp.updates.ajax = function( action, data ) {
+		var options = {};
+
 		if ( wp.updates.updateLock ) {
 			wp.updates.updateQueue.push( {
 				type: action,
@@ -152,8 +155,19 @@
 
 		wp.updates.updateLock = true;
 
-		data = _.extend( data, {
-			'_ajax_nonce':   wp.updates.ajaxNonce,
+		if ( data.success ) {
+			options.success = data.success;
+		}
+		if ( data.error ) {
+			options.error = data.error;
+		}
+
+		delete data.success;
+		delete data.error;
+
+		options.data = _.extend( data, {
+			action:          action,
+			_ajax_nonce:     wp.updates.ajaxNonce,
 			username:        wp.updates.filesystemCredentials.ftp.username,
 			password:        wp.updates.filesystemCredentials.ftp.password,
 			hostname:        wp.updates.filesystemCredentials.ftp.hostname,
@@ -162,7 +176,7 @@
 			private_key:     wp.updates.filesystemCredentials.ssh.privateKey
 		} );
 
-		return wp.ajax.post( action, data ).always( wp.updates.ajaxAlways );
+		return wp.ajax.send( options ).always( wp.updates.ajaxAlways );
 	};
 
 	/**
@@ -193,9 +207,9 @@
 	 */
 	wp.updates.decrementCount = function( upgradeType ) {
 		var $menuItem, $itemCount,
-			$adminBarUpdates = $( '#wp-admin-bar-updates' ),
-			$dashboardNavMenuUpdateCount = $( 'a[href="update-core.php"] .update-plugins' ),
-			count, itemCount;
+		    $adminBarUpdates             = $( '#wp-admin-bar-updates' ),
+		    $dashboardNavMenuUpdateCount = $( 'a[href="update-core.php"] .update-plugins' ),
+		    count, itemCount;
 
 		count = $adminBarUpdates.find( '.ab-label' ).text();
 		count = parseInt( count, 10 ) - 1;
@@ -247,27 +261,28 @@
 	 *
 	 * @since 4.2.0
 	 *
-	 * @param {string} plugin Plugin basename
-	 * @param {string} slug   Plugin slug
+	 * @param {object}        args         Arguments.
+	 * @param {string}        args.plugin  Plugin basename.
+	 * @param {string}        args.slug    Plugin slug.
+	 * @param {updateSuccess} args.success Success callback.
+	 * @param {updateError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.updatePlugin = function( plugin, slug ) {
+	wp.updates.updatePlugin = function( args ) {
 		var $updateRow, $card, $message, message;
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
+			$updateRow = $( 'tr[data-plugin="' + args.plugin + '"]' );
 			$message   = $updateRow.find( '.update-message' ).addClass( 'updating-message' ).find( 'p' );
 			message    = wp.updates.l10n.updatingLabel.replace( '%s', $updateRow.find( '.plugin-title strong' ).text() );
 		} else if ( 'plugin-install' === pagenow ) {
-			$card    = $( '.plugin-card-' + slug );
+			$card    = $( '.plugin-card-' + args.slug );
 			$message = $card.find( '.update-now' ).addClass( 'updating-message' );
 			message  = wp.updates.l10n.updatingLabel.replace( '%s', $message.data( 'name' ) );
 
 			// Remove previous error messages, if any.
 			$card.removeClass( 'plugin-card-update-failed' ).find( '.notice.notice-error' ).remove();
-		} else if ( 'update-core' === pagenow ) {
-			$updateRow = $( 'tr[data-plugin="' + plugin + '"]' );
-			$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
-			message    = wp.updates.l10n.updatingLabel.replace( '%s', $message.data( 'name' ) );
 		}
 
 		if ( ! wp.updates.updateLock ) {
@@ -281,9 +296,7 @@
 			$document.trigger( 'wp-plugin-updating' );
 		}
 
-		wp.updates.ajax( 'update-plugin', { plugin: plugin, slug: slug } )
-			.done( wp.updates.updateSuccess )
-			.fail( wp.updates.updateError );
+		return wp.updates.ajax( 'update-plugin', args );
 	};
 
 	/**
@@ -291,6 +304,7 @@
 	 *
 	 * @since 4.2.0
 	 *
+	 * @callback updateSuccess
 	 * @param {object} response            Response from the server.
 	 * @param {string} response.slug       Slug of the plugin to be updated.
 	 * @param {string} response.plugin     Basename of the plugin to be updated.
@@ -302,7 +316,7 @@
 		var $pluginRow, $updateMessage, newText;
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
-			$pluginRow = $( 'tr[data-plugin="' + response.plugin + '"]' );
+			$pluginRow     = $( 'tr[data-plugin="' + response.plugin + '"]' );
 			$updateMessage = $pluginRow.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-success' ).find( 'p' );
 			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
@@ -312,8 +326,6 @@
 
 		} else if ( 'plugin-install' === pagenow ) {
 			$updateMessage = $( '.plugin-card-' + response.slug ).find( '.update-now' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
-		} else if ( 'update-core' === pagenow ) {
-			$updateMessage = $( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
 		}
 
 		$updateMessage
@@ -331,6 +343,7 @@
 	 *
 	 * @since 4.2.0
 	 *
+	 * @callback updateError
 	 * @param {object} response            Response from the server.
 	 * @param {string} response.slug       Slug of the plugin to be updated.
 	 * @param {string} response.plugin     Basename of the plugin to be updated.
@@ -355,7 +368,10 @@
 		} else if ( 'plugin-install' === pagenow ) {
 			$card = $( '.plugin-card-' + response.slug )
 				.addClass( 'plugin-card-update-failed' )
-				.append( wp.updates.adminNotice( { className: 'update-message notice-error notice-alt is-dismissible', message: errorMessage } ) );
+				.append( wp.updates.adminNotice( {
+					className: 'update-message notice-error notice-alt is-dismissible',
+					message:   errorMessage
+				} ) );
 
 			$card.find( '.update-now' )
 				.attr( 'aria-label', wp.updates.l10n.updateFailedLabel.replace( '%s', response.pluginName ) )
@@ -374,12 +390,6 @@
 						.text( wp.updates.l10n.updateNow );
 				}, 200 );
 			} );
-		} else if ( 'update-core' === pagenow ) {
-			$message = $( 'tr[data-plugin="' + response.plugin ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
-
-			setTimeout( function() {
-				$message.text( wp.updates.l10n.update );
-			}, 500 );
 		}
 
 		wp.a11y.speak( errorMessage, 'assertive' );
@@ -392,11 +402,17 @@
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {string} slug Plugin identifier in the WordPress.org Plugin repository.
+	 * @param {object}               args         Arguments.
+	 * @param {string}               args.plugin  Plugin basename.
+	 * @param {string}               args.slug    Plugin identifier in the WordPress.org Plugin repository.
+	 * @param {installPluginSuccess} args.success Success callback.
+	 * @param {installPluginError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.installPlugin = function( slug ) {
-		var $card    = $( '.plugin-card-' + slug ),
-			$message = $card.find( '.install-now' );
+	wp.updates.installPlugin = function( args ) {
+		var $card    = $( '.plugin-card-' + args.slug ),
+		    $message = $card.find( '.install-now' );
 
 		$message.addClass( 'updating-message' );
 		$message.text( wp.updates.l10n.installing );
@@ -405,9 +421,7 @@
 		// Remove previous error messages, if any.
 		$card.removeClass( 'plugin-card-install-failed' ).find( '.notice.notice-error' ).remove();
 
-		wp.updates.ajax( 'install-plugin', { slug: slug } )
-			.done( wp.updates.installPluginSuccess )
-			.fail( wp.updates.installPluginError );
+		return wp.updates.ajax( 'install-plugin', args );
 	};
 
 	/**
@@ -415,6 +429,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback installPluginSuccess
 	 * @param {object} response      Response from the server.
 	 * @param {string} response.slug Slug of the plugin to be installed.
 	 */
@@ -433,6 +448,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback installPluginError
 	 * @param {object} response            Response from the server.
 	 * @param {string} response.slug       Slug of the plugin to be installed.
 	 * @param {string} response.plugin     Basename of the plugin to be installed.
@@ -442,8 +458,8 @@
 	 */
 	wp.updates.installPluginError = function( response ) {
 		var $card   = $( '.plugin-card-' + response.slug ),
-			$button = $card.find( '.install-now' ),
-			errorMessage;
+		    $button = $card.find( '.install-now' ),
+		    errorMessage;
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'install-plugin' );
@@ -480,15 +496,18 @@
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {string} plugin Plugin basename
-	 * @param {string} slug   Plugin slug
+	 * @param {object}              args         Arguments.
+	 * @param {string}              args.plugin  Plugin basename.
+	 * @param {string}              args.slug    Plugin slug.
+	 * @param {deletePluginSuccess} args.success Success callback.
+	 * @param {deletePluginError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.deletePlugin = function( plugin, slug ) {
+	wp.updates.deletePlugin = function( args ) {
 		wp.a11y.speak( wp.updates.l10n.deleting, 'polite' );
 
-		wp.updates.ajax( 'delete-plugin', { plugin: plugin, slug: slug } )
-			.done( wp.updates.deletePluginSuccess )
-			.fail( wp.updates.deletePluginError );
+		return wp.updates.ajax( 'delete-plugin', args );
 	};
 
 	/**
@@ -496,6 +515,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback deletePluginSuccess
 	 * @param {object} response        Response from the server.
 	 * @param {string} response.slug   Slug of the plugin to be deleted.
 	 * @param {string} response.plugin Basename of the plugin to be deleted.
@@ -503,11 +523,11 @@
 	wp.updates.deletePluginSuccess = function( response ) {
 
 		// Removes the plugin and updates rows.
-		$( '[data-plugin="' + response.plugin + '"]' ).css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+		$( '[data-plugin="' + response.plugin + '"]' ).css( { backgroundColor: '#faafaa' } ).fadeOut( 350, function() {
 			var $form       = $( '#bulk-action-form' ),
-				$views      = $( '.subsubsub' ),
-				columnCount = $form.find( 'thead th:not(.hidden), thead td' ).length,
-				plugins     = window._wpUpdatesSettings.plugins;
+			    $views      = $( '.subsubsub' ),
+			    columnCount = $form.find( 'thead th:not(.hidden), thead td' ).length,
+			    plugins     = window._wpUpdatesSettings.plugins;
 
 			$( this ).remove();
 
@@ -567,6 +587,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback deletePluginError
 	 * @param {object} response           Response from the server.
 	 * @param {string} response.plugin    Basename of the plugin to be deleted.
 	 * @param {string} response.error     The error that occurred.
@@ -578,7 +599,10 @@
 			return;
 		}
 
-		$( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.column-description' ).prepend( wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: response.error } ) );
+		$( 'tr[data-plugin="' + response.plugin + '"]' ).find( '.column-description' ).prepend( wp.updates.adminNotice( {
+			className: 'update-message notice-error notice-alt',
+			message:   response.error
+		} ) );
 
 		$document.trigger( 'wp-plugin-delete-error', response );
 	};
@@ -588,19 +612,22 @@
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {string} slug Theme stylesheet.
+	 * @param {object}             args
+	 * @param {string}             args.slug    Theme stylesheet.
+	 * @param {updateThemeSuccess} args.success Success callback.
+	 * @param {updateThemeError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.updateTheme = function( slug ) {
+	wp.updates.updateTheme = function( args ) {
 		var $notice, message;
 
 		if ( 'themes-network' === pagenow ) {
-			$notice = $( '[data-slug="' + slug + '"]' ).find( '.update-message' );
-		} else if ( 'update-core' === pagenow ) {
-			$notice = $( '[data-slug="' + slug + '"]' ).find( '.update-link' );
+			$notice = $( '[data-slug="' + args.slug + '"]' ).find( '.update-message' );
 		} else {
 			$notice = $( '#update-theme' ).closest( '.notice' );
 			if ( ! $notice.length ) {
-				$notice = $( '[data-slug="' + slug + '"]' ).find( '.update-message' );
+				$notice = $( '[data-slug="' + args.slug + '"]' ).find( '.update-message' );
 			}
 		}
 
@@ -609,12 +636,13 @@
 			$notice.data( 'originaltext', message );
 		}
 
-		$notice.replaceWith( wp.updates.adminNotice( { className: 'update-message updating-message notice-warning notice-alt', message: wp.updates.l10n.updating } ) );
+		$notice.replaceWith( wp.updates.adminNotice( {
+			className: 'update-message updating-message notice-warning notice-alt',
+			message:   wp.updates.l10n.updating
+		} ) );
 		wp.a11y.speak( wp.updates.l10n.updatingMsg, 'polite' );
 
-		wp.updates.ajax( 'update-theme', { 'slug': slug } )
-			.done( wp.updates.updateThemeSuccess )
-			.fail( wp.updates.updateThemeError );
+		return wp.updates.ajax( 'update-theme', args );
 	};
 
 	/**
@@ -622,6 +650,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback updateThemeSuccess
 	 * @param {object} response
 	 * @param {string} response.slug       Slug of the theme to be updated.
 	 * @param {object} response.theme      Updated theme.
@@ -630,9 +659,12 @@
 	 */
 	wp.updates.updateThemeSuccess = function( response ) {
 		var isModalOpen     = $( 'body.modal-open' ).length,
-			$theme          = $( '[data-slug="' + response.slug + '"]' ),
-			$updatedMessage = wp.updates.adminNotice( { className: 'update-message updated-message notice-success notice-alt', message: wp.updates.l10n.updated } ),
-			$notice, newText;
+		    $theme          = $( '[data-slug="' + response.slug + '"]' ),
+		    $updatedMessage = wp.updates.adminNotice( {
+			    className: 'update-message updated-message notice-success notice-alt',
+			    message:   wp.updates.l10n.updated
+		    } ),
+		    $notice, newText;
 
 		if ( 'themes-network' === pagenow ) {
 			$notice = $theme.find( '.update-message' );
@@ -640,12 +672,6 @@
 			// Update the version number in the row.
 			newText = $theme.find( '.theme-version-author-uri' ).html().replace( response.oldVersion, response.newVersion );
 			$theme.find( '.theme-version-author-uri' ).html( newText );
-		} else if ( 'update-core' === pagenow ) {
-			$notice = $( 'tr[data-slug="' + response.slug + '"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
-
-			$notice
-				.attr( 'aria-label', wp.updates.l10n.updatedLabel.replace( '%s', response.pluginName ) )
-				.text( wp.updates.l10n.updated );
 		} else {
 			$notice = $( '.theme-info .notice' );
 			if ( ! $notice.length ) {
@@ -678,15 +704,16 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback updateThemeError
 	 * @param {object} response           Response from the server.
 	 * @param {string} response.slug      Slug of the theme to be updated.
 	 * @param {string} response.error     The error that occurred.
 	 * @param {string} response.errorCode Error code for the error that occurred.
 	 */
 	wp.updates.updateThemeError = function( response ) {
-		var $theme = $( '[data-slug="' + response.slug + '"]' ),
-			errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
-			$notice;
+		var $theme       = $( '[data-slug="' + response.slug + '"]' ),
+		    errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
+		    $notice;
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'update-theme' );
@@ -695,12 +722,6 @@
 
 		if ( 'themes-network' === pagenow ) {
 			$notice = $theme.find( '.update-message ' );
-		} else if ( 'update-core' === pagenow ) {
-			$notice = $( 'tr[data-slug="' + response.slug ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
-
-			setTimeout( function() {
-				$notice.text( wp.updates.l10n.update );
-			}, 500 );
 		} else {
 			$notice = $( '.theme-info .notice' );
 			if ( ! $notice.length ) {
@@ -709,7 +730,10 @@
 			$( 'body.modal-open' ).length ? $( '.load-customize:visible' ).focus() : $theme.find( '.load-customize' ).focus();
 		}
 
-		$notice.replaceWith( wp.updates.adminNotice( { className: 'update-message notice-error notice-alt is-dismissible', message: errorMessage } ) );
+		$notice.replaceWith( wp.updates.adminNotice( {
+			className: 'update-message notice-error notice-alt is-dismissible',
+			message:   errorMessage
+		} ) );
 		wp.a11y.speak( errorMessage, 'polite' );
 
 		$document.trigger( 'wp-theme-update-error', response );
@@ -720,10 +744,15 @@
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {string} slug Theme stylesheet.
+	 * @param {object}              args
+	 * @param {string}              args.slug    Theme stylesheet.
+	 * @param {installThemeSuccess} args.success Success callback.
+	 * @param {installThemeError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.installTheme = function( slug ) {
-		var $message = $( '.theme-install[data-slug="' + slug + '"]' );
+	wp.updates.installTheme = function( args ) {
+		var $message = $( '.theme-install[data-slug="' + args.slug + '"]' );
 
 		$message.addClass( 'updating-message' );
 		$message.parents( '.theme' ).addClass( 'focus' );
@@ -735,11 +764,9 @@
 		wp.a11y.speak( wp.updates.l10n.installingMsg, 'polite' );
 
 		// Remove previous error messages, if any.
-		$( '.install-theme-info, [data-slug="' + slug + '"]' ).removeClass( 'theme-install-failed' ).find( '.notice.notice-error' ).remove();
+		$( '.install-theme-info, [data-slug="' + args.slug + '"]' ).removeClass( 'theme-install-failed' ).find( '.notice.notice-error' ).remove();
 
-		wp.updates.ajax( 'install-theme', { 'slug': slug } )
-			.done( wp.updates.installThemeSuccess )
-			.fail( wp.updates.installThemeError );
+		return wp.updates.ajax( 'install-theme', args );
 	};
 
 	/**
@@ -747,12 +774,13 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback installThemeSuccess
 	 * @param {object} response      Response from the server.
 	 * @param {string} response.slug Slug of the theme to be installed.
 	 */
 	wp.updates.installThemeSuccess = function( response ) {
 		var $card    = $( '.wp-full-overlay-header, #' + response.slug ),
-			$message = $card.find( '.theme-install' );
+		    $message = $card.find( '.theme-install' );
 
 		$card.removeClass( 'focus' ).addClass( 'is-installed' ); // Hides the button, should show banner.
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message disabled' );
@@ -767,6 +795,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback installThemeError
 	 * @param {object} response           Response from the server.
 	 * @param {string} response.slug      Slug of the theme to be installed.
 	 * @param {string} response.error     The error that occurred.
@@ -774,8 +803,11 @@
 	 */
 	wp.updates.installThemeError = function( response ) {
 		var $card, $button,
-			errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error ),
-			$message     = wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: errorMessage } );
+		    errorMessage = wp.updates.l10n.installFailed.replace( '%s', response.error ),
+		    $message     = wp.updates.adminNotice( {
+			    className: 'update-message notice-error notice-alt',
+			    message:   errorMessage
+		    } );
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'install-theme' );
@@ -804,9 +836,14 @@
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {string} slug Theme stylesheet.
+	 * @param {object}             args
+	 * @param {string}             args.slug    Theme stylesheet.
+	 * @param {deleteThemeSuccess} args.success Success callback.
+	 * @param {deleteThemeError}   args.error   Error callback.
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.deleteTheme = function( slug ) {
+	wp.updates.deleteTheme = function( args ) {
 		var $button = $( '.theme-actions .delete-theme' );
 
 		if ( $button.html() !== wp.updates.l10n.deleting ) {
@@ -819,9 +856,7 @@
 		// Remove previous error messages, if any.
 		$( '.theme-info .update-message' ).remove();
 
-		wp.updates.ajax( 'delete-theme', { slug: slug } )
-			.done( wp.updates.deleteThemeSuccess )
-			.fail( wp.updates.deleteThemeError );
+		return wp.updates.ajax( 'delete-theme', args );
 	};
 
 	/**
@@ -829,6 +864,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback deleteThemeSuccess
 	 * @param {object} response      Response from the server.
 	 * @param {string} response.slug Slug of the theme to be deleted.
 	 */
@@ -838,9 +874,9 @@
 		if ( 'themes-network' === pagenow ) {
 
 			// Removes the theme and updates rows.
-			$themeRow.css( { backgroundColor:'#faafaa' } ).fadeOut( 350, function() {
+			$themeRow.css( { backgroundColor: '#faafaa' } ).fadeOut( 350, function() {
 				var $views = $( '.subsubsub' ),
-					totals = window._wpUpdatesSettings.totals;
+				    totals = window._wpUpdatesSettings.totals;
 
 				$themeRow.remove();
 
@@ -875,6 +911,7 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback deleteThemeError
 	 * @param {object} response           Response from the server.
 	 * @param {string} response.slug      Slug of the theme to be deleted.
 	 * @param {string} response.error     The error that occurred.
@@ -882,8 +919,11 @@
 	 */
 	wp.updates.deleteThemeError = function( response ) {
 		var errorMessage = wp.updates.l10n.deleteFailed.replace( '%s', response.error ),
-			$message     = wp.updates.adminNotice( { className: 'update-message notice-error notice-alt', message: errorMessage } ),
-			$button      = $( '.theme-actions .delete-theme' );
+		    $message     = wp.updates.adminNotice( {
+			    className: 'update-message notice-error notice-alt',
+			    message:   errorMessage
+		    } ),
+		    $button      = $( '.theme-actions .delete-theme' );
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode ) {
 			wp.updates.credentialError( response, 'delete-theme' );
@@ -903,92 +943,48 @@
 	};
 
 	/**
-	 * Send an Ajax request to the server to update translations.
-	 *
-	 * @since 4.X.0
-	 */
-	wp.updates.updateTranslations = function() {
-		var $updateRow, $message, message;
-
-		$updateRow = $( 'tr[data-type="translation"]' );
-		$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
-		message    = wp.updates.l10n.updatingMsg;
-
-		if ( ! wp.updates.updateLock ) {
-			$message.attr( 'aria-label', message );
-
-			if ( $message.html() !== wp.updates.l10n.updating ) {
-				$message.data( 'originaltext', $message.html() );
-			}
-
-			$message.text( wp.updates.l10n.updating );
-
-			$document.trigger( 'wp-translations-updating' );
-		}
-
-		wp.updates.ajax( 'update-translations', {} )
-			.done( wp.updates.updateTranslationsSuccess )
-			.fail( wp.updates.updateTranslationsError );
-	};
-
-	/**
-	 * On a successful translations update, update the UI with the result.
+	 * Send an Ajax request to the server to update a single item in the updates list table
 	 *
 	 * @since 4.X.0
 	 *
-	 * @param {object} response Response from the server.
+	 * @param {object}     args         Arguments.
+	 * @param {Function}   args.success Success callback.
+	 * @param {Function}   args.error   Error callback.
+	 * @param {jQuery}     args.row     The list table row
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
 	 */
-	wp.updates.updateTranslationsSuccess = function( response ) {
-		var $updateMessage = $( 'tr[data-type="translation"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+	wp.updates.updateItem = function( args ) {
+		var $itemRow = args.row,
+		    $message = $itemRow.find( '.update-link' ),
+		    type     = $message.data( 'type' ) || $itemRow.data( 'type' );
 
-		$updateMessage.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
-
-		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
-
-		wp.updates.decrementCount( 'translations' );
-
-		$document.trigger( 'wp-translations-update-success', response );
-	};
-
-	/**
-	 * On a translations update error, update the UI appropriately.
-	 *
-	 * @since 4.X.0
-	 *
-	 * @param {object} response Response from the server.
-	 */
-	wp.updates.updateTranslationsError = function( response ) {
-		var errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
-		    $message = $( 'tr[data-type="translation"]' ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
-
-		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
-			wp.updates.credentialError( response, 'update-translations' );
+		// The item has already been updated, do not proceed.
+		if ( $message.hasClass( 'updated-message' ) ) {
 			return;
 		}
 
-		setTimeout( function() {
-			$message.text( wp.updates.l10n.update );
-		}, 500 );
+		$message.addClass( 'updating-message' );
 
-		wp.a11y.speak( errorMessage, 'assertive' );
+		// Do not send this data.
+		delete args.row;
 
-		$document.trigger( 'wp-translations-update-error', response );
-	};
-
-	/**
-	 * Send an Ajax request to the server to update core itself.
-	 *
-	 * @since 4.X.0
-	 */
-	wp.updates.updateCore = function() {
-		var $updateRow, $message, message;
-
-		$updateRow = $( 'tr[data-type="core"]' );
-		$message   = $updateRow.find( '.update-link' ).addClass( 'updating-message' );
-		message    = wp.updates.l10n.updatingMsg;
+		switch ( type ) {
+			case 'plugin':
+				args.plugin = $itemRow.data( 'plugin' );
+				args.slug   = $itemRow.data( 'slug' );
+				break;
+			case 'theme':
+				args.slug = $itemRow.data( 'slug' );
+				break;
+			case 'core':
+				args.version = $itemRow.data( 'version' );
+				args.locale  = $itemRow.data( 'locale' );
+				break;
+		}
 
 		if ( ! wp.updates.updateLock ) {
-			$message.attr( 'aria-label', message );
+			$message.attr( 'aria-label', wp.updates.l10n.updatingMsg );
 
 			if ( $message.html() !== wp.updates.l10n.updating ) {
 				$message.data( 'originaltext', $message.html() );
@@ -996,15 +992,10 @@
 
 			$message.text( wp.updates.l10n.updating );
 
-			$document.trigger( 'wp-core-updating' );
+			$document.trigger( 'wp-' + type + '-updating' );
 		}
 
-		wp.updates.ajax( 'update-core', {
-			version: $updateRow.data( 'version' ),
-			locale:  $updateRow.data( 'locale' )
-		} )
-			.done( wp.updates.updateCoreSuccess )
-			.fail( wp.updates.updateCoreError );
+		return wp.updates.ajax( 'update-' + type, args );
 	};
 
 	/**
@@ -1012,18 +1003,19 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback updateCoreSuccess
 	 * @param {object} response Response from the server.
+	 * @param {jQuery} row      The list table row
 	 */
-	wp.updates.updateCoreSuccess = function( response ) {
-		var $updateMessage = $( 'tr[data-type="core"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+	wp.updates.updateItemSuccess = function( response, row ) {
+		var $message = row.find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' ),
+		    type     = $message.data( 'type' ) || row.data( 'type' );
 
-		$updateMessage.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
+		$message.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
 
 		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
 
-		$document.trigger( 'wp-core-update-success', response );
-
-		window.location = response.redirect;
+		$document.trigger( 'wp-' + type + '-update-success', response );
 	};
 
 	/**
@@ -1031,11 +1023,13 @@
 	 *
 	 * @since 4.X.0
 	 *
+	 * @callback updateCoreError
 	 * @param {object} response Response from the server.
 	 */
-	wp.updates.updateCoreError = function( response ) {
-		var errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error ),
-		    $message = $( 'tr[data-type="core"]' ).find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' );
+	wp.updates.updateItemError = function( response, row ) {
+		var $message     = row.find( '.update-link' ).text( wp.updates.l10n.updateFailedShort ).removeClass( 'updating-message' ),
+		    type         = $message.data( 'type' ) || row.data( 'type' ),
+		    errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
 
 		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
 			wp.updates.credentialError( response, 'update-core' );
@@ -1048,7 +1042,90 @@
 
 		wp.a11y.speak( errorMessage, 'assertive' );
 
-		$document.trigger( 'wp-core-update-error', response );
+		$document.trigger( 'wp-' + type + '-update-error', response );
+	};
+
+	/**
+	 * Send an Ajax request to the server to install all available updates.
+	 *
+	 * @since 4.X.0
+	 * @return {$.promise} A jQuery promise that represents the request,
+	 *                     decorated with an abort() method.
+	 */
+	wp.updates.updateAll = function() {
+		var $message = $( '.update-link[data-type="all"]' ).addClass( 'updating-message' ),
+		    message  = wp.updates.l10n.updatingMsg;
+
+		if ( ! wp.updates.updateLock ) {
+			$message.attr( 'aria-label', message );
+
+			if ( $message.html() !== wp.updates.l10n.updating ) {
+				$message.data( 'originaltext', $message.html() );
+			}
+
+			$message.text( wp.updates.l10n.updating );
+
+			$document.trigger( 'wp-all-updating' );
+		}
+
+		// Translations first, themes and plugins afterwards before updating core at last.
+		$.when(
+			$( $( '.wp-list-table.updates tr[data-type]' ) ).reverse().each( function() {
+				wp.updates.updateItem( {
+					row:     $( this ),
+					success: function( response ) {
+						return wp.updates.updateItemSuccess( response, $( this ) );
+					},
+					error:   function( response ) {
+						return wp.updates.updateItemError( response, $( this ) );
+					}
+				} );
+			} ).promise()
+		)
+			.done( wp.updates.updateAllSuccess )
+			.fail( wp.updates.updateAllError );
+	};
+
+	/**
+	 * On a successful update, update the UI appropriately and redirect to the about page if necessary.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateAllSuccess = function( response ) {
+		var $updateMessage = $( 'tr[data-type="all"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' );
+
+		$updateMessage.attr( 'aria-label', wp.updates.l10n.updated ).text( wp.updates.l10n.updated );
+
+		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
+
+		$document.trigger( 'wp-all-update-success', response );
+	};
+
+	/**
+	 * On an update error, update the UI appropriately.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @param {object} response Response from the server.
+	 */
+	wp.updates.updateAllError = function( response ) {
+		var $message     = $( 'tr[data-type="all"]' ).find( '.update-link' ).removeClass( 'updating-message' ).addClass( 'button-disabled updated-message' ),
+		    errorMessage = wp.updates.l10n.updateFailed.replace( '%s', response.error );
+
+		if ( response.errorCode && 'unable_to_connect_to_filesystem' === response.errorCode && wp.updates.shouldRequestFilesystemCredentials ) {
+			wp.updates.credentialError( response, 'update-all' );
+			return;
+		}
+
+		setTimeout( function() {
+			$message.text( wp.updates.l10n.update );
+		}, 500 );
+
+		wp.a11y.speak( errorMessage, 'assertive' );
+
+		$document.trigger( 'wp-all-update-error', response );
 	};
 
 	/**
@@ -1069,27 +1146,27 @@
 		// Handle a queue job.
 		switch ( job.type ) {
 			case 'install-plugin':
-				wp.updates.installPlugin( job.data.slug );
+				wp.updates.installPlugin( job.data );
 				break;
 
 			case 'update-plugin':
-				wp.updates.updatePlugin( job.data.plugin, job.data.slug );
+				wp.updates.updatePlugin( job.data );
 				break;
 
 			case 'delete-plugin':
-				wp.updates.deletePlugin( job.data.plugin, job.data.slug );
+				wp.updates.deletePlugin( job.data );
 				break;
 
 			case 'install-theme':
-				wp.updates.installTheme( job.data.slug );
+				wp.updates.installTheme( job.data );
 				break;
 
 			case 'update-theme':
-				wp.updates.updateTheme( job.data.slug );
+				wp.updates.updateTheme( job.data );
 				break;
 
 			case 'delete-theme':
-				wp.updates.deleteTheme( job.data.slug );
+				wp.updates.deleteTheme( job.data );
 				break;
 
 			default:
@@ -1181,7 +1258,7 @@
 	 * @since 4.X.0 Triggers an event for callbacks to listen to and add their actions.
 	 */
 	wp.updates.requestForCredentialsModalCancel = function() {
-		var plugin = wp.updates.updateQueue[0].data.plugin;
+		var plugin = wp.updates.updateQueue[ 0 ].data.plugin;
 
 		// No updateLock and no updateQueue means we already have cleared things up.
 		if ( false === wp.updates.updateLock && 0 === wp.updates.updateQueue.length ) {
@@ -1229,7 +1306,7 @@
 				 * This would feel more whole in a view all tied together.
 				 */
 				plugin: response.plugin,
-				slug: response.slug
+				slug:   response.slug
 			}
 		} );
 
@@ -1254,8 +1331,8 @@
 
 	$( function() {
 		var $theList         = $( '.wp-list-table:not(.updates)' ),
-			$bulkActionForm  = $( '#bulk-action-form' ),
-			$filesystemModal = $( '#request-filesystem-credentials-dialog' );
+		    $bulkActionForm  = $( '#bulk-action-form' ),
+		    $filesystemModal = $( '#request-filesystem-credentials-dialog' );
 
 		/*
 		 * Check whether a user needs to submit filesystem credentials based on whether
@@ -1263,7 +1340,7 @@
 		 *
 		 * @see {wp_print_request_filesystem_credentials_modal() in PHP}
 		 */
-		wp.updates.shouldRequestFilesystemCredentials = $filesystemModal.length > 0 ;
+		wp.updates.shouldRequestFilesystemCredentials = $filesystemModal.length > 0;
 
 		/**
 		 * File system credentials form submit noop-er / handler.
@@ -1323,7 +1400,12 @@
 
 			// Return the user to the input box of the plugin's table row after closing the modal.
 			wp.updates.$elToReturnFocusToFromCredentialsModal = $pluginRow.find( '.check-column input' );
-			wp.updates.updatePlugin( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
+			wp.updates.updatePlugin( {
+				plugin:  $pluginRow.data( 'plugin' ),
+				slug:    $pluginRow.data( 'slug' ),
+				success: wp.updates.updateSuccess,
+				error:   wp.updates.updateError
+			} );
 		} );
 
 		/**
@@ -1341,7 +1423,12 @@
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.updatePlugin( $button.data( 'plugin' ), $button.data( 'slug' ) );
+			wp.updates.updatePlugin( {
+				plugin:  $button.data( 'plugin' ),
+				slug:    $button.data( 'slug' ),
+				success: wp.updates.updateSuccess,
+				error:   wp.updates.updateError
+			} );
 		} );
 
 		/**
@@ -1371,7 +1458,11 @@
 				} );
 			}
 
-			wp.updates.installPlugin( $button.data( 'slug' ) );
+			wp.updates.installPlugin( {
+				slug:    $button.data( 'slug' ),
+				success: wp.updates.installPluginSuccess,
+				error:   wp.updates.installPluginError
+			} );
 		} );
 
 		/**
@@ -1393,7 +1484,13 @@
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.deletePlugin( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
+			wp.updates.deletePlugin( {
+				plugin:  $pluginRow.data( 'plugin' ),
+				slug:    $pluginRow.data( 'slug' ),
+				success: wp.updates.deletePluginSuccess,
+				error:   wp.updates.deletePluginError
+			} );
+
 		} );
 
 		/**
@@ -1413,7 +1510,11 @@
 
 			// Return the user to the input box of the theme's table row after closing the modal.
 			wp.updates.$elToReturnFocusToFromCredentialsModal = $themeRow.find( '.check-column input' );
-			wp.updates.updateTheme( $themeRow.data( 'slug' ) );
+			wp.updates.updateTheme( {
+				slug:    $themeRow.data( 'slug' ),
+				success: wp.updates.updateThemeSuccess,
+				error:   wp.updates.updateThemeError
+			} );
 		} );
 
 		/**
@@ -1424,7 +1525,7 @@
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin .update-link', function( event ) {
-			var $link = $( event.target ).parents( 'tr' );
+			var $themeRow = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
@@ -1432,8 +1533,12 @@
 			}
 
 			// Return the user to the input box of the theme's table row after closing the modal.
-			wp.updates.$elToReturnFocusToFromCredentialsModal = $link.find( '.check-column input' );
-			wp.updates.updateTheme( $link.data( 'slug' ) );
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $themeRow.find( '.check-column input' );
+			wp.updates.updateTheme( {
+				slug:    $themeRow.data( 'slug' ),
+				success: wp.updates.updateThemeSuccess,
+				error:   wp.updates.updateThemeError
+			} );
 		} );
 
 		/**
@@ -1444,10 +1549,10 @@
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin a.delete', function( event ) {
-			var $link = $( event.target ).parents( 'tr' );
+			var $themeRow = $( event.target ).parents( 'tr' );
 			event.preventDefault();
 
-			if ( ! window.confirm( wp.updates.l10n.aysDelete.replace( '%s', $link.find( '.plugin-title strong' ).text() ) ) ) {
+			if ( ! window.confirm( wp.updates.l10n.aysDelete.replace( '%s', $themeRow.find( '.plugin-title strong' ).text() ) ) ) {
 				return;
 			}
 
@@ -1455,7 +1560,11 @@
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			wp.updates.deleteTheme( $link.data( 'slug' ) );
+			wp.updates.deleteTheme( {
+				slug:    $themeRow.data( 'slug' ),
+				success: wp.updates.deleteThemeSuccess,
+				error:   wp.updates.deleteThemeError
+			} );
 		} );
 
 		/**
@@ -1467,8 +1576,11 @@
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
 			var action        = $( event.target ).siblings( 'select' ).val(),
-				itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
-				pluginAction, success = 0, error = 0, errorMessages = [];
+			    itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
+			    success       = 0,
+			    error         = 0,
+			    errorMessages = [],
+			    pluginAction, pluginActionDone, pluginActionFail;
 
 			if ( 'plugins' !== pagenow && 'plugins-network' !== pagenow ) {
 				return;
@@ -1479,19 +1591,23 @@
 				$( 'html, body' ).animate( { scrollTop: 0 } );
 
 				return wp.updates.addAdminNotice( {
-					id: 'no-items-selected',
+					id:        'no-items-selected',
 					className: 'notice-error is-dismissible',
-					message: wp.updates.l10n.noItemsSelected
+					message:   wp.updates.l10n.noItemsSelected
 				} );
 			}
 
 			switch ( action ) {
 				case 'update-selected':
-					pluginAction = wp.updates.updatePlugin;
+					pluginAction     = wp.updates.updatePlugin;
+					pluginActionDone = wp.updates.updateSuccess;
+					pluginActionFail = wp.updates.updateError;
 					break;
 
 				case 'delete-selected':
-					pluginAction = wp.updates.deletePlugin;
+					pluginAction     = wp.updates.deletePlugin;
+					pluginActionDone = wp.updates.deletePluginSuccess;
+					pluginActionFail = wp.updates.deletePluginError;
 					break;
 
 				default:
@@ -1510,7 +1626,7 @@
 			// Find all the checkboxes which have been checked.
 			itemsSelected.each( function( index, element ) {
 				var $checkbox  = $( element ),
-					$pluginRow = $checkbox.parents( 'tr' );
+				    $pluginRow = $checkbox.parents( 'tr' );
 
 				// Un-check the box.
 				$checkbox.prop( 'checked', false );
@@ -1520,7 +1636,12 @@
 					return;
 				}
 
-				pluginAction( $pluginRow.data( 'plugin' ), $pluginRow.data( 'slug' ) );
+				pluginAction( {
+					plugin:  $pluginRow.data( 'plugin' ),
+					slug:    $pluginRow.data( 'slug' ),
+					success: pluginActionDone,
+					error:   pluginActionFail
+				} );
 			} );
 
 			$document.on( 'wp-plugin-update-success', function() {
@@ -1536,9 +1657,9 @@
 				wp.updates.adminNotice = wp.template( 'wp-bulk-updates-admin-notice' );
 
 				wp.updates.addAdminNotice( {
-					id: 'bulk-action-notice',
-					successes: success,
-					errors: error,
+					id:            'bulk-action-notice',
+					successes:     success,
+					errors:        error,
 					errorMessages: errorMessages
 				} );
 
@@ -1562,8 +1683,8 @@
 		 */
 		$bulkActionForm.on( 'click', '[type="submit"]', function( event ) {
 			var action        = $( event.target ).siblings( 'select' ).val(),
-				itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
-				themeAction;
+			    itemsSelected = $bulkActionForm.find( 'input[name="checked[]"]:checked' ),
+			    themeAction, themeActionDone, themeActionFail;
 
 			if ( 'themes-network' !== pagenow ) {
 				return;
@@ -1574,19 +1695,23 @@
 				$( 'html, body' ).animate( { scrollTop: 0 } );
 
 				return wp.updates.addAdminNotice( {
-					id: 'no-items-selected',
+					id:        'no-items-selected',
 					className: 'notice-error is-dismissible',
-					message: wp.updates.l10n.noItemsSelected
+					message:   wp.updates.l10n.noItemsSelected
 				} );
 			}
 
 			switch ( action ) {
 				case 'update-selected':
-					themeAction = wp.updates.updateTheme;
+					themeAction     = wp.updates.updateTheme;
+					themeActionDone = wp.updates.updateThemeSuccess;
+					themeActionFail = wp.updates.updateThemeError;
 					break;
 
 				case 'delete-selected':
-					themeAction = wp.updates.deleteTheme;
+					themeAction     = wp.updates.deleteTheme;
+					themeActionDone = wp.updates.deleteThemeSuccess;
+					themeActionFail = wp.updates.deleteThemeError;
 					break;
 
 				default:
@@ -1605,7 +1730,7 @@
 			// Find all the checkboxes which have been checked.
 			itemsSelected.each( function( index, element ) {
 				var $checkbox = $( element ),
-					$themeRow = $checkbox.parents( 'tr' );
+				    $themeRow = $checkbox.parents( 'tr' );
 
 				// Un-check the box.
 				$checkbox.prop( 'checked', false );
@@ -1615,7 +1740,11 @@
 					return;
 				}
 
-				themeAction( $themeRow.data( 'slug' ) );
+				themeAction( {
+					slug:    $themeRow.data( 'slug' ),
+					success: themeActionDone,
+					error:   themeActionFail
+				} );
 			} );
 		} );
 
@@ -1627,8 +1756,16 @@
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.wp-list-table.updates .update-link', function( event ) {
-			var $itemRow   = $( event.target ).parents( 'tr' ),
-			    updateType = $itemRow.data( 'type' );
+			var $itemRow = $( event.target ).parents( 'tr' ),
+			    args     = {
+				    row:     $itemRow,
+				    success: function( response ) {
+					    return wp.updates.updateItemSuccess( response, $itemRow );
+				    },
+				    error:   function( response ) {
+					    return wp.updates.updateItemError( response, $itemRow );
+				    }
+			    };
 
 			event.preventDefault();
 
@@ -1639,20 +1776,7 @@
 			// Return the user back to where he left off after closing the modal.
 			wp.updates.$elToReturnFocusToFromCredentialsModal = $( event.target );
 
-			switch ( updateType ) {
-				case 'plugin':
-					wp.updates.updatePlugin( $itemRow.data( 'plugin' ), $itemRow.data( 'slug' ) );
-					break;
-				case 'theme':
-					wp.updates.updateTheme( $itemRow.data( 'slug' ) );
-					break;
-				case 'translation':
-					wp.updates.updateTranslations();
-					break;
-				case 'core':
-					wp.updates.updateCore();
-					break;
-			}
+			wp.updates.updateItem( args );
 		} );
 
 		/**
@@ -1683,12 +1807,12 @@
 		 * Make notices dismissible.
 		 *
 		 * @since 4.X.0
- 		 */
+		 */
 		$document.on( 'wp-updates-notice-added wp-theme-update-error wp-theme-install-error', function() {
 			$( '.notice.is-dismissible' ).each( function() {
 				var $notice = $( this ),
-					$button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
-					btnText = window.commonL10n.dismiss || '';
+				    $button = $( '<button type="button" class="notice-dismiss"><span class="screen-reader-text"></span></button>' ),
+				    btnText = window.commonL10n.dismiss || '';
 
 				// Ensure plain text.
 				$button.find( '.screen-reader-text' ).text( btnText );
@@ -1716,11 +1840,11 @@
 		 */
 		$( 'input.wp-filter-search' ).on( 'keyup search', _.debounce( function() {
 			var data = {
-					_ajax_nonce: wp.updates.ajaxNonce,
-					s:           $( this ).val(),
-					tab:         'search',
-					type:        $( '#typeselector' ).val()
-				};
+				_ajax_nonce: wp.updates.ajaxNonce,
+				s:           $( this ).val(),
+				tab:         'search',
+				type:        $( '#typeselector' ).val()
+			};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
 				wp.updates.searchRequest.abort();
@@ -1742,9 +1866,9 @@
 		 */
 		$( '#plugin-search-input' ).on( 'keyup search', _.debounce( function() {
 			var data = {
-					_ajax_nonce: wp.updates.ajaxNonce,
-					s:           $( this ).val()
-				};
+				_ajax_nonce: wp.updates.ajaxNonce,
+				s:           $( this ).val()
+			};
 
 			if ( 'undefined' !== typeof wp.updates.searchRequest ) {
 				wp.updates.searchRequest.abort();
@@ -1754,7 +1878,7 @@
 
 				// Can we just ditch this whole subtitle business?
 				var $subTitle    = $( '<span />' ).addClass( 'subtitle' ).text( wp.updates.l10n.searchResults.replace( '%s', data.s ) ),
-					$oldSubTitle = $( '.wrap .subtitle' );
+				    $oldSubTitle = $( '.wrap .subtitle' );
 
 				if ( 0 === data.s.length ) {
 					$oldSubTitle.remove();
@@ -1799,10 +1923,12 @@
 
 			job = {
 				action: 'updatePlugin',
-				type: 'update-plugin',
-				data: {
-					plugin: $( this ).data( 'plugin' ),
-					slug: $( this ).data( 'slug' )
+				type:   'update-plugin',
+				data:   {
+					plugin:  $( this ).data( 'plugin' ),
+					slug:    $( this ).data( 'slug' ),
+					success: wp.updates.updateSuccess,
+					error:   wp.updates.updateError
 				}
 			};
 
@@ -1830,9 +1956,11 @@
 
 			job = {
 				action: 'installPlugin',
-				type: 'install-plugin',
-				data: {
-					slug: $( this ).data( 'slug' )
+				type:   'install-plugin',
+				data:   {
+					slug:    $( this ).data( 'slug' ),
+					success: wp.updates.installPluginSuccess,
+					error:   wp.updates.installPluginError
 				}
 			};
 
@@ -1890,4 +2018,4 @@
 		 */
 		$( window ).on( 'beforeunload', wp.updates.beforeunload );
 	} );
-} )( jQuery, window.wp );
+})( jQuery, window.wp );
