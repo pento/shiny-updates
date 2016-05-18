@@ -175,10 +175,12 @@ function su_plugin_update_row( $file, $plugin_data ) {
  */
 function su_theme_update_row( $theme_key, $theme ) {
 	$current = get_site_transient( 'update_themes' );
+
 	if ( ! isset( $current->response[ $theme_key ] ) ) {
 		return false;
 	}
-	$r = $current->response[ $theme_key ];
+
+	$response = $current->response[ $theme_key ];
 
 	$details_url = add_query_arg( array(
 		'TB_iframe' => 'true',
@@ -197,15 +199,15 @@ function su_theme_update_row( $theme_key, $theme ) {
 			$theme['Name'],
 			esc_url( $details_url ),
 			esc_attr( $theme['Name'] ),
-			$r->new_version
+			$response->new_version
 		);
-	} elseif ( empty( $r['package'] ) ) {
+	} elseif ( empty( $response['package'] ) ) {
 		/* translators: 1: theme name, 2: details URL, 3: escaped theme name, 4: version number */
 		printf( __( 'There is a new version of %1$s available. <a href="%2$s" class="thickbox open-plugin-details-modal" aria-label="View %3$s version %4$s details">View version %4$s details</a>. <em>Automatic update is unavailable for this theme.</em>' ),
 			$theme['Name'],
 			esc_url( $details_url ),
 			esc_attr( $theme['Name'] ),
-			$r['new_version']
+			$response['new_version']
 		);
 	} else {
 		/* translators: 1: theme name, 2: details URL, 3: escaped theme name, 4: version number, 5: update URL */
@@ -213,7 +215,7 @@ function su_theme_update_row( $theme_key, $theme ) {
 			$theme['Name'],
 			esc_url( $details_url ),
 			esc_attr( $theme['Name'] ),
-			$r['new_version'],
+			$response['new_version'],
 			wp_nonce_url( self_admin_url( 'update.php?action=upgrade-theme&theme=' ) . $theme_key, 'upgrade-theme_' . $theme_key )
 		);
 	}
@@ -228,7 +230,7 @@ function su_theme_update_row( $theme_key, $theme ) {
 	 * @since 3.1.0
 	 *
 	 * @param WP_Theme $theme       The WP_Theme object.
-	 * @param array    $r           {
+	 * @param array    $response           {
 	 *                              An array of metadata about the available theme update.
 	 *
 	 * @type string    $new_version New theme version.
@@ -236,7 +238,7 @@ function su_theme_update_row( $theme_key, $theme ) {
 	 * @type string    $package     Theme update package URL.
 	 * }
 	 */
-	do_action( "in_theme_update_message-{$theme_key}", $theme, $r );
+	do_action( "in_theme_update_message-{$theme_key}", $theme, $response );
 
 	echo '</p></div></td></tr>';
 }
