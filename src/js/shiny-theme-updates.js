@@ -78,7 +78,9 @@ window.wp = window.wp || {};
 
 			// Bail if the user scrolled on a touch device
 			if ( true === this.touchDrag ) {
-				return this.touchDrag = false;
+				this.touchDrag = false;
+
+				return this.touchDrag;
 			}
 
 			// Prevent the modal from showing when the user clicks
