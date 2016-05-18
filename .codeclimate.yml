@@ -23,6 +23,8 @@ engines:
         enabled: false
       Controversial/CamelCaseVariableName:
         enabled: false
+      Controversial/Superglobals:
+        enabled: false
 ratings:
   paths:
   - "**.css"
