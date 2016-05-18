@@ -324,11 +324,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			<span class="dashicons dashicons-translation"></span>
 			<strong><?php _e( 'Translations' ); ?></strong>
 		</p>
-		<?php if ( ! $item['data'] ) : ?>
-			<p> <?php _e( 'Your translations are all up to date.' ); ?></p>
-		<?php else : ?>
-			<p><?php _e( 'New translations are available.' ); ?></p>
-		<?php endif; ?>
+		<p><?php _e( 'New translations are available.' ); ?></p>
 		<?php
 	}
 
