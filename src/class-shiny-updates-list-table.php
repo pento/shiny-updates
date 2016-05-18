@@ -82,7 +82,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			);
 		}
 
-		if ( ! empty( $translations ) || 'en_US' !== get_locale() ) {
+		if ( ! empty( $translations ) ) {
 			$this->items[] = array(
 				'type' => 'translation',
 				'slug' => 'translation',
