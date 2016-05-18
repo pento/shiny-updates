@@ -94,8 +94,8 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 
 		if ( ! empty( $translations ) ) {
 			$this->items[] = array(
-				'type' => 'translation',
-				'slug' => 'translation',
+				'type' => 'translations',
+				'slug' => 'translations',
 				'data' => $translations,
 			);
 		}
@@ -271,11 +271,11 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			}
 		}
 
+		$upgrade_notice = '';
+
 		// Get the upgrade notice for the new plugin version.
 		if ( isset( $plugin->update->upgrade_notice ) ) {
 			$upgrade_notice = '<br />' . strip_tags( $plugin->update->upgrade_notice );
-		} else {
-			$upgrade_notice = '';
 		}
 
 		$details_url = self_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $plugin->update->slug . '&section=changelog&TB_iframe=true&width=640&height=662' );
@@ -329,10 +329,8 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	 *
 	 * @since  4.X.0
 	 * @access public
-	 *
-	 * @param array $item The current item.
 	 */
-	public function column_title_translation( $item ) {
+	public function column_title_translations() {
 		?>
 		<p>
 			<span class="dashicons dashicons-translation"></span>
@@ -358,7 +356,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			case 'theme':
 				echo __( 'Theme' );
 				break;
-			case 'translation':
+			case 'translations':
 				echo __( 'Translations' );
 				break;
 			default:
@@ -398,7 +396,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		$slug         = $item['slug'];
 		$checkbox_id  = 'checkbox_' . md5( $slug );
 		$form_action  = sprintf( 'update-core.php?action=do-%s-upgrade', $item['type'] );
-		$nonce_action = 'translation' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
+		$nonce_action = 'translations' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
 		$data         = '';
 
 		foreach ( $this->_get_data_attributes( $item ) as $attribute => $value ) {
