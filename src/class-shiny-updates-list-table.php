@@ -164,7 +164,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 
 		if ( 'core' === $item['type'] ) {
 			$attributes['data-version'] = esc_attr( $item['data'][0]->current );
-			$attributes['data-locale'] = esc_attr( $item['data'][0]->locale );
+			$attributes['data-locale']  = esc_attr( $item['data'][0]->locale );
 		} else if ( 'theme' === $item['type'] ) {
 			$attributes['data-slug'] = $item['slug'];
 		} else if ( 'plugin' === $item['type'] ) {
@@ -358,19 +358,14 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Handles the action column output.
-	 *
-	 * @access public
+	 * Get the data attributes for a given list table item.
 	 *
 	 * @param array $item The current item.
+	 *
+	 * @return array Data attributes as key value pairs.
 	 */
-	public function column_action( $item ) {
-		$slug        = $item['slug'];
-		$checkbox_id = 'checkbox_' . md5( $slug );
-		$form_action = sprintf( 'update-core.php?action=do-%s-upgrade', $item['type'] );
-		$nonce_action = 'translation' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
-		$data        = '';
-		$attributes  = array();
+	protected function _get_data_attributes( $item ) {
+		$attributes = array();
 
 		if ( 'plugin' === $item['type'] ) {
 			$attributes['data-plugin'] = esc_attr( $item['slug'] );
@@ -379,7 +374,24 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			$attributes['aria-label']  = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->Name ) );
 		}
 
-		foreach ( $attributes as $attribute => $value ) {
+		return $attributes;
+	}
+
+	/**
+	 * Handles the action column output.
+	 *
+	 * @access public
+	 *
+	 * @param array $item The current item.
+	 */
+	public function column_action( $item ) {
+		$slug         = $item['slug'];
+		$checkbox_id  = 'checkbox_' . md5( $slug );
+		$form_action  = sprintf( 'update-core.php?action=do-%s-upgrade', $item['type'] );
+		$nonce_action = 'translation' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
+		$data         = '';
+
+		foreach ( $this->_get_data_attributes( $item ) as $attribute => $value ) {
 			$data .= $attribute . '="' . esc_attr( $value ) . '" ';
 		}
 		?>
