@@ -249,7 +249,6 @@ function su_theme_update_row( $theme_key, $theme ) {
 function su_update_table() {
 	?>
 	<div class="shiny-update-table">
-		<h2><?php _e( 'Available Updates' ); ?></h2>
 		<?php
 		require_once( 'class-shiny-updates-list-table.php' );
 

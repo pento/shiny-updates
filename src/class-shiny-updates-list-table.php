@@ -144,7 +144,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		$action = ob_get_clean();
 
 		return array(
-			'title'  => '',
+			'title'  => __( 'Available Updates' ),
 			'type'   => __( 'Type' ),
 			'action' => $action,
 		);
