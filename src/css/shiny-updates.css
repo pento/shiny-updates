@@ -222,6 +222,10 @@ tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .notice-error.notic
 	margin: 0 10px 5px 0;
 }
 
+.wp-list-table.updates .updates-table-screenshot {
+	padding: 5px 15px 10px 10px;
+}
+
 @media aural {
 	.wrap .notice p:before,
 	.theme .notice:before,
