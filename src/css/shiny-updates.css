@@ -198,6 +198,7 @@ tr.active + tr.plugin-update-tr:not(.updated) .plugin-update .notice-error.notic
 	display: none;
 }
 
+.update-core-php .wrap > h1 + p,
 .update-core-php .notice.notice-warning + p {
 	display: block;
 }
