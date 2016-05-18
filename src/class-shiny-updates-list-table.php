@@ -32,6 +32,16 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	protected $core_update_version;
 
 	/**
+	 * Whether there are any available updates.
+	 *
+	 * @since 4.X.0
+	 * @access protected
+	 *
+	 * @var bool
+	 */
+	protected $has_available_updates = false;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -100,6 +110,10 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			$this->core_update_version = $core_updates[0]->current;
 		}
 
+		if ( $this->core_update_version || ! empty( $plugins ) || ! empty( $themes ) || ! empty( $translations ) ) {
+			$this->has_available_updates = true;
+		}
+
 		$columns  = $this->get_columns();
 		$hidden   = array();
 		$sortable = $this->get_sortable_columns();
@@ -136,7 +150,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		?>
 		<form method="post" action="update-core.php?action=do-all-upgrade" name="upgrade-all">
 			<?php wp_nonce_field( 'upgrade-core', '_wpnonce' ); ?>
-			<button class="button button-primary update-link" data-type="all" type="submit" value="" name="upgrade-all" <?php echo empty( $this->items ) ? 'disabled' : ''; ?>>
+			<button class="button button-primary update-link" data-type="all" type="submit" value="" name="upgrade-all" <?php echo ! $this->has_available_updates ? 'disabled' : ''; ?>>
 				<?php esc_attr_e( 'Update All' ); ?>
 			</button>
 		</form>
@@ -392,7 +406,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		}
 
 		// No update available, hide button.
-		if ( 'core' === $item['type'] && $item['data'][0]->current === $item['data'][0]->version ) {
+		if ( 'core' === $item['type'] && ! $this->core_update_version ) {
 			return;
 		}
 		?>
