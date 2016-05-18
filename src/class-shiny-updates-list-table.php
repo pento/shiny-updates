@@ -390,6 +390,11 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		foreach ( $this->_get_data_attributes( $item ) as $attribute => $value ) {
 			$data .= $attribute . '="' . esc_attr( $value ) . '" ';
 		}
+
+		// No update available, hide button.
+		if ( 'core' === $item['type'] && $item['data'][0]->current === $item['data'][0]->version ) {
+			return;
+		}
 		?>
 		<form method="post" action="<?php echo esc_url( $form_action ); ?>" name="upgrade-all">
 			<?php wp_nonce_field( $nonce_action ); ?>
