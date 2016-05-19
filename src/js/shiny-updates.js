@@ -162,8 +162,10 @@
 			options.error = data.error;
 		}
 
+		// Do not send this data.
 		delete data.success;
 		delete data.error;
+		delete data.el;
 
 		options.data = _.extend( data, {
 			action:          action,
@@ -950,24 +952,21 @@
 	 * @param {object}     args         Arguments.
 	 * @param {Function}   args.success Success callback.
 	 * @param {Function}   args.error   Error callback.
-	 * @param {jQuery}     args.row     The list table row
+	 * @param {jQuery}     args.el     The list table row
 	 * @return {$.promise} A jQuery promise that represents the request,
 	 *                     decorated with an abort() method.
 	 */
 	wp.updates.updateItem = function( args ) {
-		var $itemRow = args.row,
+		var $itemRow = args.el,
 		    $message = $itemRow.find( '.update-link' ),
 		    type     = $message.data( 'type' ) || $itemRow.data( 'type' );
 
 		// The item has already been updated, do not proceed.
-		if ( $message.hasClass( 'updated-message' ) ) {
+		if ( 0 === $message.length || $message.hasClass( 'updated-message' ) ) {
 			return;
 		}
 
 		$message.addClass( 'updating-message' );
-
-		// Do not send this data.
-		delete args.row;
 
 		switch ( type ) {
 			case 'plugin':
@@ -1049,10 +1048,13 @@
 	 * Send an Ajax request to the server to install all available updates.
 	 *
 	 * @since 4.X.0
+	 * @param {object}   args         Arguments.
+	 * @param {Function} args.success Success callback.
+	 * @param {Function} args.error   Error callback.
 	 * @return {$.promise} A jQuery promise that represents the request,
 	 *                     decorated with an abort() method.
 	 */
-	wp.updates.updateAll = function() {
+	wp.updates.updateAll = function( args ) {
 		var $message = $( '.update-link[data-type="all"]' ).addClass( 'updating-message' ),
 		    message  = wp.updates.l10n.updatingMsg;
 
@@ -1070,20 +1072,21 @@
 
 		// Translations first, themes and plugins afterwards before updating core at last.
 		$.when(
-			$( $( '.wp-list-table.updates tr[data-type]' ) ).reverse().each( function() {
+			$( $( '.wp-list-table.updates tr[data-type]' ).get().reverse() ).each( function() {
+				var $el = $( this );
 				wp.updates.updateItem( {
-					row:     $( this ),
+					el:     $el,
 					success: function( response ) {
-						return wp.updates.updateItemSuccess( response, $( this ) );
+						return wp.updates.updateItemSuccess( response, $el );
 					},
 					error:   function( response ) {
-						return wp.updates.updateItemError( response, $( this ) );
+						return wp.updates.updateItemError( response, $el );
 					}
 				} );
 			} ).promise()
 		)
-			.done( wp.updates.updateAllSuccess )
-			.fail( wp.updates.updateAllError );
+			.done( args.success )
+			.fail( args.error );
 	};
 
 	/**
@@ -1142,6 +1145,11 @@
 		}
 
 		job = wp.updates.updateQueue.shift();
+
+		if ( 'update-core' === pagenow ) {
+			wp.updates.updateItem( job.data );
+			return;
+		}
 
 		// Handle a queue job.
 		switch ( job.type ) {
@@ -1777,6 +1785,31 @@
 			wp.updates.$elToReturnFocusToFromCredentialsModal = $( event.target );
 
 			wp.updates.updateItem( args );
+		} );
+
+		/**
+		 * Click handler for updates in the Update List Table view.
+		 *
+		 * @since 4.X.0
+		 *
+		 * @param {Event} event Event interface.
+		 */
+		$document.on( 'click', '.wordpress-updates-table .tablenav .update-link', function( event ) {
+			var args = {
+				success: wp.updates.updateAllSuccess,
+				error:   wp.updates.updateAllError
+			};
+
+			event.preventDefault();
+
+			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
+				wp.updates.requestFilesystemCredentials( event );
+			}
+
+			// Return the user back to where he left off after closing the modal.
+			wp.updates.$elToReturnFocusToFromCredentialsModal = $( event.target );
+
+			wp.updates.updateAll( args );
 		} );
 
 		/**
