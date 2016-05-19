@@ -606,18 +606,22 @@ function wp_ajax_update_core() {
 		'redirect' => esc_url( self_admin_url( 'about.php?updated' ) ),
 	);
 
-	if ( $update->current === $update->version ) {
-		wp_send_json_success( $status );
-	}
-
 	include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
 
 	if ( $reinstall ) {
 		$update->response = 'reinstall';
 	}
 
-	$upgrader = new WP_Automatic_Updater();
-	$result   = $upgrader->update( 'core', $update );
+	$url     = 'update-core.php?action=do-core-upgrade';
+	$nonce   = 'upgrade-translations';
+	$title   = __( 'Update Core' );
+	$context = ABSPATH;
+
+	$skin     = new Automatic_Upgrader_Skin( compact( 'url', 'nonce', 'title', 'context' ) );
+	$upgrader = new Core_Upgrader( $skin );
+	$result   = $upgrader->upgrade( $update, array(
+		'allow_relaxed_file_ownership' => ! $reinstall && isset( $update->new_files ) && ! $update->new_files,
+	) );
 
 	if ( is_array( $result ) && ! empty( $result[0] ) ) {
 		wp_send_json_success( $status );
