@@ -72,7 +72,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 		return false;
 	}
 
-	$r = $current->response[ $file ];
+	$response = $current->response[ $file ];
 
 	$plugins_allowedtags = array(
 		'a'       => array( 'href' => array(), 'title' => array() ),
@@ -84,7 +84,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 	);
 
 	$plugin_name   = wp_kses( $plugin_data['Name'], $plugins_allowedtags );
-	$details_url   = self_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $r->slug . '&section=changelog&TB_iframe=true&width=600&height=800' );
+	$details_url   = self_admin_url( 'plugin-install.php?tab=plugin-information&plugin=' . $response->slug . '&section=changelog&TB_iframe=true&width=600&height=800' );
 	$wp_list_table = _get_list_table( 'WP_Plugins_List_Table' );
 
 	if ( is_network_admin() || ! is_multisite() ) {
@@ -94,7 +94,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 			$active_class = is_plugin_active( $file ) ? ' active' : '';
 		}
 
-		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $r->slug . '-update' ) . '" data-slug="' . esc_attr( $r->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>';
+		echo '<tr class="plugin-update-tr' . $active_class . '" id="' . esc_attr( $response->slug . '-update' ) . '" data-slug="' . esc_attr( $response->slug ) . '" data-plugin="' . esc_attr( $file ) . '"><td colspan="' . esc_attr( $wp_list_table->get_column_count() ) . '" class="plugin-update colspanchange"><div class="update-message notice inline notice-warning notice-alt"><p>';
 
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			/* translators: 1: plugin name, 2: details URL, 3: escaped plugin name, 4: version number */
@@ -102,15 +102,15 @@ function su_plugin_update_row( $file, $plugin_data ) {
 				$plugin_name,
 				esc_url( $details_url ),
 				esc_attr( $plugin_name ),
-				$r->new_version
+				$response->new_version
 			);
-		} elseif ( empty( $r->package ) ) {
+		} elseif ( empty( $response->package ) ) {
 			/* translators: 1: plugin name, 2: details URL, 3: escaped plugin name, 4: version number */
 			printf( __( 'There is a new version of %1$s available. <a href="%2$s" class="thickbox open-plugin-details-modal" aria-label="View %3$s version %4$s details">View version %4$s details</a>. <em>Automatic update is unavailable for this plugin.</em>' ),
 				$plugin_name,
 				esc_url( $details_url ),
 				esc_attr( $plugin_name ),
-				$r->new_version
+				$response->new_version
 			);
 		} else {
 			/* translators: 1: plugin name, 2: details URL, 3: escaped plugin name, 4: version number, 5: update URL */
@@ -118,7 +118,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 				$plugin_name,
 				esc_url( $details_url ),
 				esc_attr( $plugin_name ),
-				$r->new_version,
+				$response->new_version,
 				wp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&plugin=' ) . $file, 'upgrade-plugin_' . $file )
 			);
 		}
@@ -149,7 +149,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 		 * @type bool   $update      Whether there's an available update. Default null.
 		 * }
 		 *
-		 * @param array $r           {
+		 * @param array $response           {
 		 *                           An array of metadata about the available plugin update.
 		 *
 		 * @type int    $id          Plugin ID.
@@ -159,7 +159,7 @@ function su_plugin_update_row( $file, $plugin_data ) {
 		 * @type string $package     Plugin update package URL.
 		 * }
 		 */
-		do_action( "in_plugin_update_message-{$file}", $plugin_data, $r );
+		do_action( "in_plugin_update_message-{$file}", $plugin_data, $response );
 
 		echo '</p></div></td></tr>';
 	}
