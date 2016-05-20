@@ -310,7 +310,7 @@ function wpsu_ajax_update_plugin() {
 	$status = array(
 		'update'     => 'plugin',
 		'plugin'     => $plugin,
-		'slug'       => sanitize_key( $_POST['slug'] ),
+		'slug'       => sanitize_key( wp_unslash( $_POST['slug'] ) ),
 		'pluginName' => $plugin_data['Name'],
 		'oldVersion' => '',
 		'newVersion' => '',
@@ -401,7 +401,7 @@ function wp_ajax_delete_plugin() {
 
 	$status = array(
 		'delete'     => 'plugin',
-		'slug'       => sanitize_key( $_POST['slug'] ),
+		'slug'       => sanitize_key( wp_unslash( $_POST['slug'] ) ),
 		'plugin'     => $plugin,
 		'pluginName' => $plugin_data['Name'],
 	);
