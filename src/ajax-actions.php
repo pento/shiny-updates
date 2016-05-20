@@ -411,7 +411,7 @@ function wp_ajax_delete_plugin() {
 		wp_send_json_error( $status );
 	}
 
-	if ( ! is_plugin_inactive( $plugin ) ) {
+	if ( is_plugin_active( $plugin ) ) {
 		$status['error'] = __( 'You cannot delete a plugin while it is active on the main site.' );
 		wp_send_json_error( $status );
 	}
