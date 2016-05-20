@@ -137,7 +137,7 @@ function wp_ajax_update_theme() {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
 
-	} else if ( is_bool( $result ) && ! $result ) {
+	} else if ( false === $result ) {
 		global $wp_filesystem;
 
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
@@ -365,7 +365,7 @@ function wpsu_ajax_update_plugin() {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
 
-	} else if ( is_bool( $result ) && ! $result ) {
+	} else if ( false === $result ) {
 		global $wp_filesystem;
 
 		$status['errorCode'] = 'unable_to_connect_to_filesystem';
