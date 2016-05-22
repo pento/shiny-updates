@@ -627,15 +627,15 @@ function wp_ajax_update_core() {
 		'allow_relaxed_file_ownership' => ! $reinstall && isset( $update->new_files ) && ! $update->new_files,
 	) );
 
-	if ( is_array( $result ) && ! empty( $result[0] ) ) {
-		wp_send_json_success( $status );
-	} else if ( is_wp_error( $result ) ) {
+	if ( is_wp_error( $result ) ) {
 		$status['error'] = $result->get_error_message();
 		wp_send_json_error( $status );
 	} else if ( false === $result ) {
 		// These aren't actual errors.
 		$status['error'] = __( 'Installation Failed' );
 		wp_send_json_error( $status );
+	} else {
+		wp_send_json_success( $status );
 	}
 
 	// An unhandled error occurred.
