@@ -1015,6 +1015,10 @@
 		wp.a11y.speak( wp.updates.l10n.updatedMsg, 'polite' );
 
 		$document.trigger( 'wp-' + type + '-update-success', response );
+
+		if ( 'core' === type && response.redirect ) {
+			window.location = response.redirect;
+		}
 	};
 
 	/**
