@@ -1768,52 +1768,22 @@
 		/**
 		 * Click handler for updates in the Update List Table view.
 		 *
+		 * Handles the re-install core button as well.
+		 *
 		 * @since 4.X.0
 		 *
 		 * @param {Event} event Event interface.
 		 */
-		$document.on( 'click', '.wp-list-table.updates .update-link', function( event ) {
-			var $itemRow = $( event.target ).parents( 'tr' ),
+		$document.on( 'click', '.update-core-php .update-link', function( event ) {
+			var $itemRow = $( event.target ).parents( '[data-type]' ),
 			    args     = {
-				    el:     $itemRow,
+				    el:      $itemRow,
 				    success: function( response ) {
 					    return wp.updates.updateItemSuccess( response, $itemRow );
 				    },
 				    error:   function( response ) {
 					    return wp.updates.updateItemError( response, $itemRow );
 				    }
-			    };
-
-			event.preventDefault();
-
-			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials( event );
-			}
-
-			// Return the user back to where he left off after closing the modal.
-			wp.updates.$elToReturnFocusToFromCredentialsModal = $( event.target );
-
-			wp.updates.updateItem( args );
-		} );
-
-		/**
-		 * Click handler for the re-install core button.
-		 *
-		 * @since 4.X.0
-		 *
-		 * @param {Event} event Event interface.
-		 */
-		$document.on( 'click', '.wordpress-reinstall-card .upgrade', function( event ) {
-			var $el  = $( event.target ).parents( '.wordpress-reinstall-card' ),
-			    args = {
-				    el:        $el,
-				    success:   function( response ) {
-					    return wp.updates.updateItemSuccess( response, $el );
-				    },
-				    error:     function( response ) {
-					    return wp.updates.updateItemError( response, $el );
-				    },
-				    reinstall: true
 			    };
 
 			event.preventDefault();
