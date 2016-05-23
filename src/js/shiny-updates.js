@@ -1,4 +1,4 @@
-(function( $, wp, pagenow, updatesSettings ) {
+(function( $, wp, pagenow, settings ) {
 	var $document = $( document );
 
 	wp = wp || {};
@@ -17,7 +17,7 @@
 	 *
 	 * @type {string}
 	 */
-	wp.updates.ajaxNonce = updatesSettings.ajax_nonce;
+	wp.updates.ajaxNonce = settings.ajax_nonce;
 
 	/**
 	 * Localized strings.
@@ -26,7 +26,7 @@
 	 *
 	 * @type {object}
 	 */
-	wp.updates.l10n = updatesSettings.l10n;
+	wp.updates.l10n = settings.l10n;
 
 	/**
 	 * Whether filesystem credentials need to be requested from the user.
@@ -532,7 +532,7 @@
 			var $form       = $( '#bulk-action-form' ),
 			    $views      = $( '.subsubsub' ),
 			    columnCount = $form.find( 'thead th:not(.hidden), thead td' ).length,
-			    plugins     = updatesSettings.plugins;
+			    plugins     = settings.plugins;
 
 			$( this ).remove();
 
@@ -881,7 +881,7 @@
 			// Removes the theme and updates rows.
 			$themeRow.css( { backgroundColor: '#faafaa' } ).fadeOut( 350, function() {
 				var $views = $( '.subsubsub' ),
-				    totals = updatesSettings.totals;
+				    totals = settings.totals;
 
 				$themeRow.remove();
 
