@@ -980,8 +980,9 @@
 				args.slug = $itemRow.data( 'slug' );
 				break;
 			case 'core':
-				args.version = $itemRow.data( 'version' );
-				args.locale  = $itemRow.data( 'locale' );
+				args.version   = $itemRow.data( 'version' );
+				args.locale    = $itemRow.data( 'locale' );
+				args.reinstall = !! $itemRow.data( 'reinstall' );
 				break;
 		}
 

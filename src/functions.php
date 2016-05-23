@@ -625,7 +625,7 @@ function su_update_table() {
 		return;
 	}
 	?>
-	<div class="wordpress-reinstall-card card" data-type="core" data-version="<?php echo esc_attr( $update->current ); ?>" data-locale="<?php echo esc_attr( $update->locale ); ?>">
+	<div class="wordpress-reinstall-card card" data-type="core" data-reinstall="true" data-version="<?php echo esc_attr( $update->current ); ?>" data-locale="<?php echo esc_attr( $update->locale ); ?>">
 		<h2><?php _e( 'Need to re-install WordPress?' ); ?></h2>
 		<p>
 			<?php printf( __( 'If you need to re-install version %s, you can do so here.' ), $version_string ); ?>
