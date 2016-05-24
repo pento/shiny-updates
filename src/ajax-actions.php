@@ -289,6 +289,16 @@ function wp_ajax_install_plugin() {
 		wp_send_json_error( $status );
 	}
 
+	$install_status = install_plugin_install_status( $api );
+
+	if ( current_user_can( 'activate_plugins' ) && is_plugin_inactive( $install_status['file'] ) ) {
+		$status['activateUrl'] = add_query_arg( array(
+			'_wpnonce' => wp_create_nonce( 'activate-plugin_' . $install_status['file'] ),
+			'action'   => 'activate',
+			'plugin'   => $install_status['file'],
+		), admin_url( 'plugins.php' ) );
+	}
+
 	wp_send_json_success( $status );
 }
 

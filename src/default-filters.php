@@ -32,6 +32,7 @@ add_action( 'wp_ajax_delete-plugin', 'wp_ajax_delete_plugin' );
 
 // Plugin activations.
 add_action( 'wp_ajax_activate-plugin', 'su_wp_ajax_activate_plugin' );
+add_filter( 'plugin_install_action_links', 'su_plugin_install_actions', 10, 2 );
 
 // Themes.
 add_filter( 'wp_prepare_themes_for_js', 'su_theme_data' );

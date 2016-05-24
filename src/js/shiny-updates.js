@@ -442,11 +442,21 @@
 	wp.updates.installPluginSuccess = function( response ) {
 		var $message = $( '.plugin-card-' + response.slug ).find( '.install-now' );
 
-		$message.removeClass( 'updating-message' ).addClass( 'installed updated-message button-disabled' );
-		$message.text( wp.updates.l10n.installed );
+		$message.removeClass( 'updating-message install-now' ).addClass( 'updated-message installed button-disabled' )
+			.text( wp.updates.l10n.installed );
+
 		wp.a11y.speak( wp.updates.l10n.installedMsg, 'polite' );
 
 		$document.trigger( 'wp-plugin-install-success', response );
+
+		if ( response.activateUrl ) {
+			setTimeout( function() {
+				// Transform the 'Install' button into an 'Activate' button.
+				$message.removeClass( 'installed button-disabled' ).addClass( 'activate-now button-primary updated-message' )
+					.attr( 'href', response.activateUrl )
+					.text( wp.updates.l10n.activate );
+			}, 1000 );
+		}
 	};
 
 	/**

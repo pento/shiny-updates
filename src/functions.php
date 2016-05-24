@@ -38,14 +38,11 @@ function su_enqueue_scripts( $hook ) {
 	}
 
 	$plugins = $totals = array();
-	if ( isset( $GLOBALS['plugins'] ) ) {
-		foreach ( $GLOBALS['plugins'] as $key => $list ) {
-			$plugins[ $key ] = array_keys( (array) $list );
-		}
-	}
 
-	if ( isset( $GLOBALS['totals'] ) ) {
-		$totals = $GLOBALS['totals'];
+	if ( ! isset( $GLOBALS['plugins'] ) ) {
+		$GLOBALS['plugins'] = array(
+			'all' => get_plugins(),
+		);
 	}
 
 	wp_enqueue_style( 'shiny-updates', plugin_dir_url( __FILE__ ) . 'css/shiny-updates.css' );
@@ -100,6 +97,7 @@ function su_enqueue_scripts( $hook ) {
 			'deleting'           => __( 'Deleting...' ),
 			'deleteFailed'       => __( 'Deletion failed: %s' ),
 			'deleted'            => __( 'Deleted!' ),
+			'activate'           => __( 'Activate' ),
 		),
 	) );
 
@@ -703,4 +701,38 @@ function su_update_all() {
 	do_core_upgrade();
 
 	include( ABSPATH . 'wp-admin/admin-footer.php' );
+}
+
+/**
+ * Filter the actions available on the new plugin screen, enabling activation
+ * for plugins that are installed and inactive.
+ *
+ * @todo Merge: Add to WP_Plugin_Install_List_Table::display_rows()
+ *
+ * @param array $action_links An array of plugin action hyperlinks. Defaults are links to Details and Install Now.
+ * @param array $plugin       The plugin currently being listed.
+ * @return array The modified action links.
+ */
+function su_plugin_install_actions( $action_links, $plugin ) {
+	$status = install_plugin_install_status( $plugin );
+
+	if ( is_plugin_active( $status['file'] ) ) {
+		$action_links[0] = '<button type="button" class="button button-disabled" disabled="disabled">' . _x( 'Active', 'plugin' ) . '</button>';
+
+		// If the plugin is installed, potentially add an activation link.
+	} else if ( current_user_can( 'activate_plugins' ) && in_array( $status['status'], array( 'latest_installed', 'newer_installed' ) ) ) {
+		$action_links[0] = sprintf(
+			'<a href="%1$s" class="button activate-now button-secondary" aria-label="%2$s">%3$s</a>',
+			esc_url( add_query_arg( array(
+				'_wpnonce' => wp_create_nonce( 'activate-plugin_' . $status['file'] ),
+				'action'   => 'activate',
+				'plugin'   => $status['file'],
+			), admin_url( 'plugins.php' ) ) ),
+			/* translators: %s: plugin name */
+			esc_attr( sprintf( __( 'Activate %s' ), $plugin['name'] ) ),
+			__( 'Activate' )
+		);
+	}
+
+	return $action_links;
 }
