@@ -1,12 +1,15 @@
 <?php
 /**
- * This file holds the shiny updates list table class.
+ * Upgrade API: Shiny_Updates_List_Table class.
  *
  * @package Shiny_Updates
+ * @since 4.X.0
  */
 
 /**
  * List table used on the available updates screen.
+ *
+ * Holds available updates for core, plugins, themes and translations.
  *
  * @since 4.X.0
  */
@@ -14,7 +17,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * The current WordPress version.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access protected
 	 *
 	 * @var string
@@ -24,10 +27,10 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * The available WordPress version, if applicable.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access protected
 	 *
-	 * @var string|false
+	 * @var string|false Available WordPress version or false if already up to date.
 	 */
 	protected $core_update_version;
 
@@ -42,7 +45,10 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	protected $has_available_updates = false;
 
 	/**
-	 * Constructor.
+	 * Construct the list table.
+	 *
+	 * @since 4.X.0
+	 * @access public
 	 */
 	public function __construct() {
 		parent::__construct( array(
@@ -55,8 +61,8 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	 * Prepares the list of items for displaying.
 	 *
 	 * @access public
-	 * @since  4.X.0
-	 * @uses   WP_List_Table::set_pagination_args()
+	 * @since 4.X.0
+	 * @uses WP_List_Table::set_pagination_args()
 	 */
 	public function prepare_items() {
 		global $wp_version;
@@ -135,7 +141,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Get a list of CSS classes for the WP_List_Table table tag.
+	 * Returns a list of CSS classes for the WP_List_Table table tag.
 	 *
 	 * @since 4.X.0
 	 * @access protected
@@ -147,7 +153,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Display the table
+	 * Displays the actual table.
 	 *
 	 * @since 4.X.0
 	 * @access public
@@ -159,7 +165,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 
 		$this->screen->render_screen_reader_content( 'heading_list' );
 		?>
-		<table class="wp-list-table <?php echo implode( ' ', $this->get_table_classes() ); ?>">
+		<table class="wp-list-table <?php echo esc_attr( implode( ' ', $this->get_table_classes() ) ); ?>">
 			<thead>
 			<tr>
 				<?php $this->print_column_headers(); ?>
@@ -168,7 +174,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 
 			<tbody id="the-list"<?php
 			if ( $singular ) {
-				echo " data-wp-lists='list:$singular'";
+				echo esc_attr( " data-wp-lists='list:$singular'" );
 			} ?>>
 			<?php $this->display_rows_or_placeholder(); ?>
 			</tbody>
@@ -187,7 +193,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Generate the table navigation above or below the table
+	 * Generates the table navigation above or below the table.
 	 *
 	 * @since 4.X.0
 	 * @access protected
@@ -206,7 +212,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 						<span class="displaying-num">
 							<?php printf( _n( '%s item', '%s items', $total_items ), number_format_i18n( $total_items ) ); ?>
 						</span>
-						<button class="button button-primary update-link" data-type="all" type="submit" value="" name="upgrade-all">
+						<button class="button button-primary update-link" data-type="all" type="submit" aria-label="<?php esc_attr_e( 'Install all updates now' ); ?>">
 							<?php esc_attr_e( 'Update All' ); ?>
 						</button>
 					</form>
@@ -218,9 +224,9 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Get a list of columns.
+	 * Gets a list of columns.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @return array The list table columns.
@@ -236,26 +242,15 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Generates content for a single row of the table
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
-	 * @param object $item The current item.
+	 * @param array $item The current item.
 	 */
 	public function single_row( $item ) {
-		$data       = '';
-		$attributes = array( 'data-type' => $item['type'] );
+		$data = '';
 
-		if ( 'core' === $item['type'] ) {
-			$attributes['data-version'] = esc_attr( $item['data']->current );
-			$attributes['data-locale']  = esc_attr( $item['data']->locale );
-		} else if ( 'theme' === $item['type'] ) {
-			$attributes['data-slug'] = $item['slug'];
-		} else if ( 'plugin' === $item['type'] ) {
-			$attributes['data-slug']   = $item['data']->update->slug;
-			$attributes['data-plugin'] = $item['slug'];
-		}
-
-		foreach ( $attributes as $attribute => $value ) {
+		foreach ( $this->_get_data_attributes( $item, 'row' ) as $attribute => $value ) {
 			$data .= $attribute . '="' . esc_attr( $value ) . '" ';
 		}
 
@@ -267,7 +262,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the title column output.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @param array $item The current item.
@@ -284,7 +279,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the title column output for a theme update item.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @param array $item The current item.
@@ -312,7 +307,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the title column output for a plugin update item.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @param array $item The current item.
@@ -353,9 +348,9 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		$details     = sprintf(
 			'<a href="%1$s" class="thickbox open-plugin-details-modal" aria-label="%2$s">%3$s</a>',
 			esc_url( $details_url ),
-			/* translators: 1: plugin name, 2: version number */
+			/* translators: 1: Plugin name, 2: Version number */
 			esc_attr( sprintf( __( 'View %1$s version %2$s details' ), $plugin->Name, $plugin->update->new_version ) ),
-			/* translators: %s: plugin version */
+			/* translators: %s: Plugin version */
 			sprintf( __( 'View version %s details.' ), $plugin->update->new_version )
 		);
 		?>
@@ -363,7 +358,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		<p>
 			<strong><?php echo $plugin->Name; ?></strong>
 			<?php
-			/* translators: 1: plugin version, 2: new version */
+			/* translators: 1: Plugin version, 2: New version */
 			printf( __( 'You have version %1$s installed. Update to %2$s.' ),
 				$plugin->Version,
 				$plugin->update->new_version
@@ -377,7 +372,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the title column output for a core update item.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @global string $wp_version The current WordPress version.
@@ -421,7 +416,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the title column output for the translations item.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 */
 	public function column_title_translations() {
@@ -439,7 +434,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the type column output.
 	 *
-	 * @since  4.X.0
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @param array $item The current item.
@@ -447,16 +442,16 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	public function column_type( $item ) {
 		switch ( $item['type'] ) {
 			case 'plugin':
-				echo __( 'Plugin' );
+				_e( 'Plugin' );
 				break;
 			case 'theme':
-				echo __( 'Theme' );
+				_e( 'Theme' );
 				break;
 			case 'translations':
-				echo __( 'Translations' );
+				_e( 'Translations' );
 				break;
 			default:
-				echo __( 'Core' );
+				_e( 'Core' );
 				break;
 		}
 	}
@@ -464,18 +459,51 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Get the data attributes for a given list table item.
 	 *
-	 * @param array $item The current item.
+	 * @since 4.X.0
+	 * @access protected
 	 *
+	 * @param array  $item    The current item.
+	 * @param string $context Optional. Context where the attributes should be applied.
+	 *                        Can be either 'row' or 'button'. Default 'row'.
 	 * @return array Data attributes as key value pairs.
 	 */
-	protected function _get_data_attributes( $item ) {
-		$attributes = array();
+	protected function _get_data_attributes( $item, $context = 'row' ) {
+		$attributes = array( 'data-type' => esc_attr( $item['type'] ) );
 
-		if ( 'plugin' === $item['type'] ) {
-			$attributes['data-plugin'] = esc_attr( $item['slug'] );
-			$attributes['data-slug']   = esc_attr( $item['data']->update->slug );
-			$attributes['data-name']   = esc_attr( $item['data']->Name );
-			$attributes['aria-label']  = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->Name ) );
+		switch ( $item['type'] ) {
+			case 'plugin':
+				$attributes['data-plugin'] = esc_attr( $item['slug'] );
+				$attributes['data-slug']   = esc_attr( $item['data']->update->slug );
+				$attributes['data-name']   = esc_attr( $item['data']->Name );
+
+				if ( 'button' === $context ) {
+					/* translators: %s: Plugin name */
+					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->Name ) );
+				}
+				break;
+			case 'theme':
+				$attributes['data-slug'] = esc_attr( $item['slug'] );
+
+				if ( 'button' === $context ) {
+					/* translators: %s: Theme name */
+					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->display( 'Name' ) ) );
+				}
+				break;
+			case 'translations':
+				if ( 'button' === $context ) {
+					$attributes['aria-label'] = esc_attr__( 'Update translations now' );
+				}
+				break;
+			case 'core':
+				$attributes['data-version'] = esc_attr( $item['data']->current );
+				$attributes['data-locale']  = esc_attr( $item['data']->locale );
+
+				if ( 'button' === $context ) {
+					$attributes['aria-label'] = esc_attr__( 'Update WordPress now' );
+				}
+				break;
+			default:
+				break;
 		}
 
 		return $attributes;
@@ -484,6 +512,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	/**
 	 * Handles the action column output.
 	 *
+	 * @since 4.X.0
 	 * @access public
 	 *
 	 * @param array $item The current item.
@@ -494,7 +523,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		$nonce_action = 'translations' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
 		$data         = '';
 
-		foreach ( $this->_get_data_attributes( $item ) as $attribute => $value ) {
+		foreach ( $this->_get_data_attributes( $item, 'button' ) as $attribute => $value ) {
 			$data .= $attribute . '="' . esc_attr( $value ) . '" ';
 		}
 		?>
