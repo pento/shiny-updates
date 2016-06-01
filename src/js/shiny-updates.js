@@ -1462,8 +1462,14 @@
 		 * @param {Event} event Event interface.
 		 */
 		$theList.on( 'click', '[data-plugin] .update-link', function( event ) {
-			var $pluginRow = $( event.target ).parents( 'tr' );
+			var $message   = $( event.target ),
+			    $pluginRow = $message.parents( 'tr' );
+
 			event.preventDefault();
+
+			if ( $message.hasClass( 'updating-message' ) || $message.hasClass( 'button-disabled' ) ) {
+				return;
+			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
@@ -1491,7 +1497,7 @@
 			event.preventDefault();
 
 			if ( $button.hasClass( 'updating-message' ) || $button.hasClass( 'button-disabled' ) ) {
-				return false;
+				return;
 			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
@@ -1518,7 +1524,7 @@
 			event.preventDefault();
 
 			if ( $button.hasClass( 'updating-message' ) || $button.hasClass( 'button-disabled' ) ) {
-				return false;
+				return;
 			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
@@ -1577,9 +1583,14 @@
 		 * @param {Event} event Event interface.
 		 */
 		$document.on( 'click', '.themes-php.network-admin .update-link', function( event ) {
-			var $themeRow = $( event.target ).parents( 'tr' );
+			var $message  = $( event.target ),
+			    $themeRow = $message.parents( 'tr' );
 
 			event.preventDefault();
+
+			if ( $message.hasClass( 'updating-message' ) || $message.hasClass( 'button-disabled' ) ) {
+				return;
+			}
 
 			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
 				wp.updates.requestFilesystemCredentials( event );
@@ -1822,7 +1833,7 @@
 			event.preventDefault();
 
 			// The item has already been updated, do not proceed.
-			if ( 0 === $message.length || $message.hasClass( 'updated-message' ) ) {
+			if ( 0 === $message.length || $message.hasClass( 'updated-message' ) || $message.hasClass( 'updating-message' ) || $message.hasClass( 'button-disabled' ) ) {
 				return;
 			}
 
@@ -1846,7 +1857,7 @@
 			event.preventDefault();
 
 			// The item has already been updated, do not proceed.
-			if ( $message.prop( 'disabled' ) ) {
+			if ( $message.prop( 'disabled' ) || $message.hasClass( 'updating-message' ) || $message.hasClass( 'button-disabled' ) ) {
 				return;
 			}
 
