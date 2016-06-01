@@ -1815,7 +1815,7 @@
 		 *
 		 * @param {Event} event Event interface.
 		 */
-		$( '#wp-updates-table' ).on( 'click', '.update-link', function( event ) {
+		$( '.update-core-php .update-link' ).on( 'click', function( event ) {
 			var $message = $( event.target ),
 				$itemRow = $message.parents( '[data-type]' );
 
