@@ -1675,6 +1675,11 @@
 					break;
 
 				case 'delete-selected':
+					if ( ! window.confirm( wp.updates.l10n.aysBulkDelete ) ) {
+						event.preventDefault();
+						return;
+					}
+
 					pluginAction     = wp.updates.deletePlugin;
 					pluginActionDone = wp.updates.deletePluginSuccess;
 					pluginActionFail = wp.updates.deletePluginError;
