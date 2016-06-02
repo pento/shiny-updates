@@ -48,10 +48,11 @@
 	animation: rotation 2s infinite linear;
 }
 
-.wrap .notice-success p:before,
 .plugin-card .updated-message:before,
 .plugin-card .installed:before,
+.updated-message p:before,
 .button.updated-message:before,
+.installed:before p:before,
 .button.installed:before {
 	color: #79ba49;
 	content: '\f147';
