@@ -2274,17 +2274,7 @@
 					window.tb_remove();
 					/* jscs:enable */
 
-					message.data.success = wp.updates.installPluginSuccess;
-					message.data.error   = wp.updates.installPluginError;
 					message.data = wp.updates._addCallbacks( message.data, 'install-plugin' );
-
-					if ( 'import' === pagenow ) {
-						message.data.success = wp.updates.installImporterSuccess;
-						message.data.error   = wp.updates.installImporterError;
-					} else {
-						message.data.success = wp.updates.installPluginSuccess;
-						message.data.error   = wp.updates.installPluginError;
-					}
 
 					wp.updates.updateQueue.push( message );
 					wp.updates.queueChecker();
