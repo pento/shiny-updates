@@ -369,7 +369,7 @@
 
 		if ( 'plugins' === pagenow || 'plugins-network' === pagenow ) {
 			$pluginRow     = $( 'tr[data-plugin="' + response.plugin + '"]' );
-			$updateMessage = $pluginRow.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'notice-success' ).find( 'p' );
+			$updateMessage = $pluginRow.find( '.update-message' ).removeClass( 'updating-message notice-warning' ).addClass( 'updated-message notice-success' ).find( 'p' );
 			$pluginRow.addClass( 'updated' ).removeClass( 'update' );
 
 			// Update the version number in the row.
@@ -786,7 +786,7 @@
 			}
 
 			$notice.find( 'h3' ).remove();
-			$notice = $notice.addClass( 'updating-message' ).find( 'p' );
+			$notice = $notice.removeClass( 'notice-large' ).addClass( 'updating-message' ).find( 'p' );
 		}
 
 		if ( $notice.html() !== wp.updates.l10n.updating ) {
@@ -815,7 +815,7 @@
 		var isModalOpen     = $( 'body.modal-open' ).length,
 		    $theme          = $( '[data-slug="' + response.slug + '"]' ),
 		    $updatedMessage = wp.updates.adminNotice( {
-			    className: 'update-message updated-message notice-success notice-alt',
+			    className: 'updated-message notice-success notice-alt',
 			    message:   wp.updates.l10n.updated
 		    } ),
 		    $notice, newText;
@@ -942,7 +942,7 @@
 		var $card    = $( '.wp-full-overlay-header, #' + response.slug ),
 		    $message = $card.find( '.theme-install' );
 
-		$card.removeClass( 'focus' ).addClass( 'is-installed' ); // Hides the button, should show banner.
+		$card.removeClass( 'focus' ).addClass( 'is-installed' ); // Hides the button.
 		$message.removeClass( 'updating-message' ).addClass( 'updated-message disabled' );
 		$message.text( wp.updates.l10n.installed );
 		wp.a11y.speak( wp.updates.l10n.installedMsg, 'polite' );
