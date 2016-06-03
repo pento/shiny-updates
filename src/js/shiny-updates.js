@@ -1868,7 +1868,7 @@
 				$checkbox.prop( 'checked', false );
 
 				// Only add update-able plugins to the update queue.
-				if ( 'update-selected' === action && ! $pluginRow.hasClass( 'update' ) ) {
+				if ( 'update-selected' === action && ( ! $pluginRow.hasClass( 'update' ) || $pluginRow.find( 'notice-error' ).length ) ) {
 					return;
 				}
 
