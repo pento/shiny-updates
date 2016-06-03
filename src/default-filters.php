@@ -60,5 +60,7 @@ add_action( 'core_upgrade_preamble', 'su_update_table' );
 add_action( 'update-core-custom_do-all-upgrade', 'su_update_all' );
 add_action( 'admin_footer-update-core.php', 'wp_print_request_filesystem_credentials_modal' );
 
+add_filter( 'removable_query_args', 'su_wp_removable_query_args' );
+
 // Replace update row functions.
 add_action( 'admin_init', 'su_new_update_rows', 1 );

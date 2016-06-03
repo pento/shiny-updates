@@ -120,6 +120,15 @@
 	wp.updates.updateQueue = [];
 
 	/**
+	 * Holds the URL the user is being redirected to after a successful core update.
+	 *
+	 * @since 4.X.0
+	 *
+	 * @type {string}
+	 */
+	wp.updates.coreUpdateRedirect = undefined;
+
+	/**
 	 * Store a jQuery reference to return focus to when exiting the request credentials modal.
 	 *
 	 * @since 4.2.0
@@ -1103,7 +1112,8 @@
 		}, args );
 
 		$message = $( '[data-type="core"]' ).filter( function() {
-			return args.reinstall && $( this ).is( '.wordpress-reinstall-card' ) || ! args.reinstall && ! $( this ).is( '.wordpress-reinstall-card' );
+			return args.reinstall && $( this ).is( '.wordpress-reinstall-card' ) ||
+				! args.reinstall && ! $( this ).is( '.wordpress-reinstall-card' ) && args.locale === $( this ).data( 'locale' );
 		} ).find( '.update-link' );
 
 		if ( $message.html() !== wp.updates.l10n.updating ) {
@@ -1174,6 +1184,12 @@
 				break;
 
 			case 'core':
+
+				// The update queue should only ever contain one core update.
+				if ( _.findWhere( wp.updates.updateQueue, { type: 'update-core' } ) ) {
+					return;
+				}
+
 				update.data.version   = $itemRow.data( 'version' );
 				update.data.locale    = $itemRow.data( 'locale' );
 				update.data.reinstall = !! $itemRow.data( 'reinstall' );
@@ -1224,11 +1240,11 @@
 
 		wp.updates.decrementCount( type );
 
-		$document.trigger( 'wp-' + type + '-update-success', response );
-
 		if ( 'core' === type && response.redirect ) {
-			window.location = response.redirect;
+			wp.updates.coreUpdateRedirect = response.redirect;
 		}
+
+		$document.trigger( 'wp-' + type + '-update-success', response );
 	};
 
 	/**
@@ -1952,7 +1968,7 @@
 		/**
 		 * Click handler for updates in the Update List Table view.
 		 *
-		 * Handles the re-install core button as well.
+		 * Handles the re-install core button and "Update All" as well.
 		 *
 		 * @since 4.X.0
 		 *
@@ -1960,7 +1976,13 @@
 		 */
 		$( '.update-core-php .update-link' ).on( 'click', function( event ) {
 			var $message = $( event.target ),
+			    $coreRow = $( '.update-link[data-type="core"]' ).not( this ),
 				$itemRow = $message.parents( '[data-type]' );
+
+			// There are two 'Update All' buttons
+			if ( 'all' === $message.data( 'type' ) ) {
+				$message = $( '.update-link[data-type="all"]' );
+			}
 
 			event.preventDefault();
 
@@ -1969,27 +1991,8 @@
 				return;
 			}
 
-			if ( wp.updates.shouldRequestFilesystemCredentials && ! wp.updates.updateLock ) {
-				wp.updates.requestFilesystemCredentials( event );
-			}
-
-			wp.updates.updateItem( $itemRow );
-		} );
-
-		/**
-		 * Click handler for updates in the Update List Table view.
-		 *
-		 * @since 4.X.0
-		 *
-		 * @param {Event} event Event interface.
-		 */
-		$document.on( 'click', '.tablenav .update-link', function( event ) {
-			var $message = $( '.update-link[data-type="all"]' ).addClass( 'updating-message' );
-
-			event.preventDefault();
-
-			// The item has already been updated, do not proceed.
-			if ( $message.prop( 'disabled' ) || $message.hasClass( 'updating-message' ) || $message.hasClass( 'button-disabled' ) ) {
+			// Bail if there's already another core update going on.
+			if ( $coreRow.not( this ).hasClass( 'updated-message' ) || $coreRow.not( this ).hasClass( 'updating-message' ) || $coreRow.hasClass( 'button-disabled' ) ) {
 				return;
 			}
 
@@ -1997,32 +2000,46 @@
 				wp.updates.requestFilesystemCredentials( event );
 			}
 
-			if ( $message.html() !== wp.updates.l10n.updating ) {
-				$message.data( 'originaltext', $message.html() );
-			}
-
-			$message.attr( 'aria-label', wp.updates.l10n.updatingAllLabel ).text( wp.updates.l10n.updating );
-
-			$document.on( 'wp-plugin-update-success wp-theme-update-success wp-core-update-success wp-translations-update-success wp-plugin-update-error wp-theme-update-error wp-core-update-error wp-translations-update-error ', function() {
-				if ( 0 === wp.updates.updateQueue.length ) {
-					$message
-						.removeClass( 'updating-message' )
-						.attr( 'aria-label', wp.updates.l10n.updated )
-						.prop( 'disabled', true )
-						.text( wp.updates.l10n.updated );
-				}
-			} );
-
-			// Translations first, themes and plugins afterwards before updating core at last.
-			$( $( 'tr[data-type]', '#wp-updates-table' ).get().reverse() ).each( function( index, element ) {
-				var $itemRow = $( element );
-
-				if ( $( '.update-link', $itemRow ).prop( 'disabled' ) ) {
-					return;
+			if ( 'all' === $message.data( 'type' ) ) {
+				if ( $message.html() !== wp.updates.l10n.updating ) {
+					$message.data( 'originaltext', $message.html() );
 				}
 
+				$message.addClass( 'updating-message' ).attr( 'aria-label', wp.updates.l10n.updatingAllLabel ).text( wp.updates.l10n.updating );
+
+				$document.on( 'wp-plugin-update-success wp-theme-update-success wp-core-update-success wp-translations-update-success wp-plugin-update-error wp-theme-update-error wp-core-update-error wp-translations-update-error ', function() {
+					if ( 0 === wp.updates.updateQueue.length ) {
+						$message
+							.removeClass( 'updating-message' )
+							.attr( 'aria-label', wp.updates.l10n.updated )
+							.prop( 'disabled', true )
+							.text( wp.updates.l10n.updated );
+
+						// Redirect to about page after a core update took place.
+						if ( wp.updates.coreUpdateRedirect ) {
+							window.location = wp.updates.coreUpdateRedirect;
+						}
+					}
+				} );
+
+				// Translations first, themes and plugins afterwards before updating core at last.
+				$( $( 'tr[data-type]', '#wp-updates-table' ).get().reverse() ).each( function( index, element ) {
+					var $itemRow = $( element );
+
+					if ( $( '.update-link', $itemRow ).prop( 'disabled' ) ) {
+						return;
+					}
+
+					// When there are two core updates (en_US + localized), only update the localized one.
+					if ( 1 < $( '.update-link[data-type="core"]' ).length && 'core' === $itemRow.data( 'type' ) && 'en_US' === $itemRow.data( 'locale' ) ) {
+						return;
+					}
+
+					wp.updates.updateItem( $itemRow );
+				} );
+			} else {
 				wp.updates.updateItem( $itemRow );
-			} );
+			}
 		} );
 
 		/**

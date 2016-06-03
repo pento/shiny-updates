@@ -32,7 +32,7 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	 *
 	 * @var string|false Available WordPress version or false if already up to date.
 	 */
-	protected $core_update_version;
+	protected $core_update_version = false;
 
 	/**
 	 * Whether there are any available updates.
@@ -81,29 +81,27 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 
 		$this->cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 
-		$core_updates = (array) get_core_updates();
+		$core_updates = (array) get_core_updates( array( 'dismissed' => true ) );
 		$plugins      = (array) get_plugin_updates();
 		$themes       = (array) get_theme_updates();
 		$translations = (array) wp_get_translation_updates();
 
-		if ( ! isset( $core_updates[0]->response ) ||
-		     'latest' === $core_updates[0]->response ||
-		     version_compare( $core_updates[0]->current, $this->cur_wp_version, '=' )
-		) {
-			$this->core_update_version = false;
-		} else {
-			$this->core_update_version = $core_updates[0]->current;
+		foreach ( $core_updates as $core_update ) {
+			if ( isset( $core_update->response ) &&
+			     'latest' !== $core_update->response &&
+			     ! version_compare( $core_update->current, $this->cur_wp_version, '=' )
+			) {
+				$this->core_update_version = $core_update->current;
+
+				$this->items[] = array(
+					'type' => 'core',
+					'slug' => 'core',
+					'data' => $core_update,
+				);
+			}
 		}
 
 		$this->has_available_updates = ( $this->core_update_version || ! empty( $plugins ) || ! empty( $themes ) || ! empty( $translations ) );
-
-		if ( ! empty( $core_updates ) && $this->core_update_version ) {
-			$this->items[] = array(
-				'type' => 'core',
-				'slug' => 'core',
-				'data' => $core_updates[0],
-			);
-		}
 
 		foreach ( $plugins as $plugin_file => $plugin_data ) {
 			$this->items[] = array(
@@ -223,6 +221,60 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 			?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Get the data attributes for a given list table item.
+	 *
+	 * @since 4.X.0
+	 * @access protected
+	 *
+	 * @param array  $item    The current item.
+	 * @param string $context Optional. Context where the attributes should be applied.
+	 *                        Can be either 'row' or 'button'. Default 'row'.
+	 * @return array Data attributes as key value pairs.
+	 */
+	protected function _get_data_attributes( $item, $context = 'row' ) {
+		$attributes = array( 'data-type' => esc_attr( $item['type'] ) );
+
+		switch ( $item['type'] ) {
+			case 'plugin':
+				$attributes['data-plugin'] = esc_attr( $item['slug'] );
+				$attributes['data-slug']   = esc_attr( $item['data']->update->slug );
+				$attributes['data-name']   = esc_attr( $item['data']->Name );
+
+				if ( 'button' === $context ) {
+					/* translators: %s: Plugin name */
+					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->Name ) );
+				}
+				break;
+			case 'theme':
+				$attributes['data-slug'] = esc_attr( $item['slug'] );
+				$attributes['data-name'] = esc_attr( $item['data']->display( 'Name' ) );
+
+				if ( 'button' === $context ) {
+					/* translators: %s: Theme name */
+					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->display( 'Name' ) ) );
+				}
+				break;
+			case 'translations':
+				if ( 'button' === $context ) {
+					$attributes['aria-label'] = esc_attr__( 'Update translations now' );
+				}
+				break;
+			case 'core':
+				$attributes['data-version'] = esc_attr( $item['data']->current );
+				$attributes['data-locale']  = esc_attr( $item['data']->locale );
+
+				if ( 'button' === $context ) {
+					$attributes['aria-label'] = esc_attr__( 'Update WordPress now' );
+				}
+				break;
+			default:
+				break;
+		}
+
+		return $attributes;
 	}
 
 	/**
@@ -383,36 +435,64 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	 */
 	public function column_title_core( $item ) {
 		global $wp_version;
-		?>
-		<div class="updates-table-screenshot">
-			<img src="<?php echo esc_url( admin_url( 'images/wordpress-logo.svg' ) ); ?>" width="85" height="85" alt=""/>
-		</div>
-		<p>
-			<strong><?php _e( 'WordPress' ); ?></strong>
+
+		$update = $item['data'];
+
+		if ( 'en_US' === $update->locale &&
+		     'en_US' === get_locale() ||
+		     (
+			     $update->packages->partial &&
+			     $wp_version === $update->partial_version &&
+			     1 === count( get_core_updates() )
+		     )
+		) {
+			$version_string = $update->current;
+		} else {
+			$version_string = sprintf( '%s&ndash;<code>%s</code>', $update->current, $update->locale );
+		}
+
+		$dismiss_url = add_query_arg(
+			array(
+				'locale'  => $update->locale,
+				'version' => $update->current,
+			),
+			admin_url( 'update-core.php' )
+		);
+
+		if ( 'en_US' !== $update->locale && isset( $update->dismissed ) && $update->dismissed ) :
+			printf(
+				'<p><a href="%1$s" aria-label="%2$s">%3$s</a></p>',
+				esc_url( add_query_arg( 'undismiss', '', $dismiss_url ) ),
+				/* translators: 1: WordPress version, 2: locale */
+				sprintf( __( 'Show the WordPress %1$s (%2$s) update' ), $update->current, $update->locale ),
+				__( 'Show this update' )
+			);
+		else : ?>
+			<div class="updates-table-screenshot">
+				<img src="<?php echo esc_url( admin_url( 'images/wordpress-logo.svg' ) ); ?>" width="85" height="85" alt=""/>
+			</div>
+			<p>
+				<strong><?php _e( 'WordPress' ); ?></strong>
+				<?php
+				if ( 'development' === $update->response ) {
+					_e( 'You are using a development version of WordPress. You can update to the latest nightly build automatically.' );
+				} else if ( isset( $update->response ) && 'latest' !== $update->response ) {
+					/* translators: 1: WordPress version, 2: WordPress version including locale */
+					printf( __( 'You can update to <a href="https://codex.wordpress.org/Version_%1$s">WordPress %2$s</a> automatically.' ), $update->current, $version_string );
+				}
+				?>
+			</p>
 			<?php
-			$update = $item['data'];
-
-			if ( 'en_US' === $update->locale &&
-			     'en_US' === get_locale() ||
-			     (
-				     $update->packages->partial &&
-				     $wp_version === $update->partial_version &&
-				     1 === count( get_core_updates() )
-			     )
-			) {
-				$version_string = $update->current;
-			} else {
-				$version_string = sprintf( '%s&ndash;<code>%s</code>', $update->current, $update->locale );
+			if ( 'en_US' !== $update->locale && ! ( isset( $update->dismissed ) && $update->dismissed ) ) {
+				printf(
+					'<p><a href="%1$s" aria-label="%2$s">%3$s</a></p>',
+					esc_url( add_query_arg( 'dismiss', '', $dismiss_url ) ),
+					/* translators: 1: WordPress version, 2: locale */
+					sprintf( __( 'Show the WordPress %1$s (%2$s) update' ), $update->current, $update->locale ),
+					__( 'Hide this update' )
+				);
 			}
-
-			if ( 'development' === $update->response ) {
-				_e( 'You are using a development version of WordPress. You can update to the latest nightly build automatically.' );
-			} else if ( isset( $update->response ) && 'latest' !== $update->response ) {
-				printf( __( 'You can update to <a href="https://codex.wordpress.org/Version_%1$s">WordPress %2$s</a> automatically.' ), $update->current, $version_string );
-			}
-			?>
-		</p>
-		<?php
+		endif;
 	}
 
 	/**
@@ -459,60 +539,6 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 	}
 
 	/**
-	 * Get the data attributes for a given list table item.
-	 *
-	 * @since 4.X.0
-	 * @access protected
-	 *
-	 * @param array  $item    The current item.
-	 * @param string $context Optional. Context where the attributes should be applied.
-	 *                        Can be either 'row' or 'button'. Default 'row'.
-	 * @return array Data attributes as key value pairs.
-	 */
-	protected function _get_data_attributes( $item, $context = 'row' ) {
-		$attributes = array( 'data-type' => esc_attr( $item['type'] ) );
-
-		switch ( $item['type'] ) {
-			case 'plugin':
-				$attributes['data-plugin'] = esc_attr( $item['slug'] );
-				$attributes['data-slug']   = esc_attr( $item['data']->update->slug );
-				$attributes['data-name']   = esc_attr( $item['data']->Name );
-
-				if ( 'button' === $context ) {
-					/* translators: %s: Plugin name */
-					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->Name ) );
-				}
-				break;
-			case 'theme':
-				$attributes['data-slug'] = esc_attr( $item['slug'] );
-				$attributes['data-name'] = esc_attr( $item['data']->display( 'Name' ) );
-
-				if ( 'button' === $context ) {
-					/* translators: %s: Theme name */
-					$attributes['aria-label'] = esc_attr( sprintf( __( 'Update %s now' ), $item['data']->display( 'Name' ) ) );
-				}
-				break;
-			case 'translations':
-				if ( 'button' === $context ) {
-					$attributes['aria-label'] = esc_attr__( 'Update translations now' );
-				}
-				break;
-			case 'core':
-				$attributes['data-version'] = esc_attr( $item['data']->current );
-				$attributes['data-locale']  = esc_attr( $item['data']->locale );
-
-				if ( 'button' === $context ) {
-					$attributes['aria-label'] = esc_attr__( 'Update WordPress now' );
-				}
-				break;
-			default:
-				break;
-		}
-
-		return $attributes;
-	}
-
-	/**
 	 * Handles the action column output.
 	 *
 	 * @since 4.X.0
@@ -525,6 +551,10 @@ class Shiny_Updates_List_Table extends WP_List_Table {
 		$form_action  = sprintf( 'update-core.php?action=do-%s-upgrade', $item['type'] );
 		$nonce_action = 'translations' === $item['type'] ? 'upgrade-translations' : 'upgrade-core';
 		$data         = '';
+
+		if ( 'core' === $item['type'] && ( 'en_US' !== $item['data']->locale && isset( $item['data']->dismissed ) && $item['data']->dismissed ) ) {
+			return;
+		}
 
 		foreach ( $this->_get_data_attributes( $item, 'button' ) as $attribute => $value ) {
 			$data .= $attribute . '="' . esc_attr( $value ) . '" ';
