@@ -64,7 +64,7 @@ function wp_ajax_install_theme() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -146,7 +146,7 @@ function wp_ajax_update_theme() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -201,7 +201,7 @@ function wp_ajax_delete_theme() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -284,7 +284,7 @@ function wp_ajax_install_plugin() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -396,7 +396,7 @@ function wpsu_ajax_update_plugin() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -451,7 +451,7 @@ function wp_ajax_delete_plugin() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -590,7 +590,7 @@ function wp_ajax_update_translations() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
@@ -665,7 +665,7 @@ function wp_ajax_update_core() {
 
 		// Pass through the error from WP_Filesystem if one was raised.
 		if ( $wp_filesystem instanceof WP_Filesystem_Base && is_wp_error( $wp_filesystem->errors ) && $wp_filesystem->errors->get_error_code() ) {
-			$status['errorMessage'] = $wp_filesystem->errors->get_error_message();
+			$status['errorMessage'] = esc_html( $wp_filesystem->errors->get_error_message() );
 		}
 
 		wp_send_json_error( $status );
