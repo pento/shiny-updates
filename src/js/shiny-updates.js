@@ -1184,12 +1184,12 @@
 	wp.updates.updateItem = function( $itemRow ) {
 		var type   = $itemRow.data( 'type' ),
 		    update = {
-				type: 'update-' + type,
-				data: {
-					success: wp.updates.updateItemSuccess,
-					error:   wp.updates.updateItemError
-				}
-			};
+			    type: 'update-' + type,
+			    data: {
+				    success: wp.updates.updateItemSuccess,
+				    error:   wp.updates.updateItemError
+			    }
+		    };
 
 		switch ( type ) {
 			case 'plugin':
@@ -2006,7 +2006,7 @@
 		$( '.update-core-php .update-link' ).on( 'click', function( event ) {
 			var $message = $( event.target ),
 			    $coreRow = $( '.update-link[data-type="core"]' ).not( this ),
-				$itemRow = $message.parents( '[data-type]' );
+			    $itemRow = $message.parents( '[data-type]' );
 
 			// There are two 'Update All' buttons
 			if ( 'all' === $message.data( 'type' ) ) {
@@ -2211,7 +2211,7 @@
 		 */
 		$( '#plugin_install_from_iframe' ).on( 'click', function( event ) {
 			var target = window.parent === window ? null : window.parent,
-				install;
+			    install;
 
 			$.support.postMessage = !! window.postMessage;
 
