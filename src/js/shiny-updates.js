@@ -661,21 +661,35 @@
 	 * @since 4.X.0
 	 *
 	 * @typedef {object} deletePluginSuccess
-	 * @param {object} response        Response from the server.
-	 * @param {string} response.slug   Slug of the plugin to be deleted.
-	 * @param {string} response.plugin Basename of the plugin to be deleted.
+	 * @param {object} response            Response from the server.
+	 * @param {string} response.slug       Slug of the plugin that was deleted.
+	 * @param {string} response.plugin     Basename of the plugin that was deleted.
+	 * @param {string} response.pluginName Name of the plugin that was deleted.
 	 */
 	wp.updates.deletePluginSuccess = function( response ) {
 
 		// Removes the plugin and updates rows.
 		$( '[data-plugin="' + response.plugin + '"]' ).css( { backgroundColor: '#faafaa' } ).fadeOut( 350, function() {
-			var $form       = $( '#bulk-action-form' ),
-			    $views      = $( '.subsubsub' ),
-			    columnCount = $form.find( 'thead th:not(.hidden), thead td' ).length,
+			var $form            = $( '#bulk-action-form' ),
+			    $views           = $( '.subsubsub' ),
+			    $pluginRow       = $( this ),
+			    columnCount      = $form.find( 'thead th:not(.hidden), thead td' ).length,
+			    pluginDeletedRow = wp.template( 'plugin-deleted-row' ),
 			    /** @type {object} plugins Base names of plugins in their different states. */
-			    plugins     = settings.plugins;
+			    plugins          = settings.plugins;
 
-			$( this ).remove();
+			if ( ! $pluginRow.hasClass( 'plugin-update-tr' ) ) {
+				$pluginRow.after(
+					pluginDeletedRow( {
+						slug:       response.slug,
+						plugin:     response.plugin,
+						colspan:    columnCount,
+						pluginName: response.pluginName
+					} )
+				);
+			}
+
+			$pluginRow.remove();
 
 			// Remove plugin from update count.
 			if ( -1 !== _.indexOf( plugins.upgrade, response.plugin ) ) {
@@ -764,6 +778,7 @@
 				} )
 			);
 		} else {
+
 			// Remove previous error messages, if any.
 			$pluginUpdateRow.find( '.notice-error' ).remove();
 
