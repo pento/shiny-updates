@@ -613,7 +613,7 @@ function wp_ajax_update_core() {
 
 	$status = array(
 		'update'   => 'core',
-		'redirect' => esc_url( self_admin_url( 'about.php?updated' ) ),
+		'redirect' => esc_url( network_admin_url( 'about.php?updated' ) ),
 	);
 
 	if ( ! current_user_can( 'update_core' ) ) {
