@@ -1179,6 +1179,16 @@
 			.attr( 'aria-label', wp.updates.l10n.updatingCoreLabel )
 			.text( wp.updates.l10n.updating );
 
+		// Core updates should always come last to redirect to the about page.
+		if ( 0 !== wp.updates.updateQueue.length ) {
+			wp.updates.updateQueue.push( {
+				type: 'update-core',
+				data: args
+			} );
+
+			return wp.updates.queueChecker();
+		}
+
 		return wp.updates.ajax( 'update-core', args );
 	};
 
@@ -1270,6 +1280,7 @@
 	 * @param {string=} response.pluginName Optional. Name of the plugin that was updated.
 	 * @param {string=} response.oldVersion Optional. Old version of the theme or plugin.
 	 * @param {string=} response.newVersion Optional. New version of the theme or plugin.
+	 * @param {string=} response.locale     Optional. The locale of the requested core upgrade.
 	 */
 	wp.updates.updateItemSuccess = function( response ) {
 		var type = response.update,
@@ -1279,8 +1290,10 @@
 			$row = $row.filter( '[data-slug="' + response.slug + '"]' );
 		} else if ( 'core' === type ) {
 			$row = $row.filter( function() {
-				return 'reinstall' === response.reinstall && $( this ).is( '.wordpress-reinstall-card-item' ) ||
-					'reinstall' !== response.reinstall && ! $( this ).is( '.wordpress-reinstall-card-item' );
+				var $coreRow = $( this );
+
+				return 'reinstall' === response.reinstall && $coreRow.is( '.wordpress-reinstall-card-item' ) ||
+					'reinstall' !== response.reinstall && ! $coreRow.is( '.wordpress-reinstall-card-item' ) && response.locale === $coreRow.data( 'locale' );
 			} );
 		}
 
@@ -1316,6 +1329,7 @@
 	 * @param {string=} response.plugin       Optional. Basename of the plugin that was updated.
 	 * @param {string=} response.pluginName   Optional. Name of the plugin that was updated.
 	 * @param {string=} response.reinstall    Optional. Whether this was a reinstall request or not.
+	 * @param {string=} response.locale       Optional. The locale of the requested core upgrade.
 	 */
 	wp.updates.updateItemError = function( response ) {
 		var type = response.update,
@@ -1331,8 +1345,10 @@
 			$row = $row.filter( '[data-slug="' + response.slug + '"]' );
 		} else if ( 'core' === type ) {
 			$row = $row.filter( function() {
-				return 'reinstall' === response.reinstall && $( this ).is( '.wordpress-reinstall-card-item' ) ||
-					'reinstall' !== response.reinstall && ! $( this ).is( '.wordpress-reinstall-card-item' );
+				var $coreRow = $( this );
+
+				return 'reinstall' === response.reinstall && $coreRow.is( '.wordpress-reinstall-card-item' ) ||
+					'reinstall' !== response.reinstall && ! $coreRow.is( '.wordpress-reinstall-card-item' ) && response.locale === $coreRow.data( 'locale' );
 			} );
 		}
 
@@ -1357,6 +1373,7 @@
 	 * Adds the appropriate callback based on the type of action and the current page.
 	 *
 	 * @since 4.X.0
+	 * @private
 	 *
 	 * @param {object} data AJAX payload.
 	 * @param {string} type The type of action.
@@ -1417,13 +1434,6 @@
 				break;
 
 			case 'update-core':
-
-				// Core updates should always come last to redirect to the about page.
-				if ( 0 !== wp.updates.updateQueue.length ) {
-					wp.updates.updateQueue.push( job );
-					return wp.updates.queueChecker();
-				}
-
 				wp.updates.updateCore( job.data );
 				break;
 
@@ -2042,10 +2052,17 @@
 		 */
 		$( '.update-core-php .update-link' ).on( 'click', function( event ) {
 			var $message = $( event.target ),
-			    $coreRow = $( '.update-link[data-type="core"]' ).not( this ),
-			    $itemRow = $message.parents( '[data-type]' );
+			    $itemRow = $message.parents( '[data-type]' ),
 
-			// There are two 'Update All' buttons
+			    /*
+			     * There can be more than one WP update on localized installs.
+			     *
+			     * This selects the update button of the other available core update, to later determine whether that
+			     * update is already running and manipulate that button accordingly.
+			     */
+			    $otherUpdateCoreButton = $( '.update-link[data-type="core"]' ).not( this );
+
+			// Select both 'Update All' buttons.
 			if ( 'all' === $message.data( 'type' ) ) {
 				$message = $( '.update-link[data-type="all"]' );
 			}
@@ -2058,7 +2075,7 @@
 			}
 
 			// Bail if there's already another core update going on.
-			if ( $coreRow.not( this ).hasClass( 'updated-message' ) || $coreRow.not( this ).hasClass( 'updating-message' ) || $coreRow.hasClass( 'button-disabled' ) ) {
+			if ( $otherUpdateCoreButton.hasClass( 'updated-message' ) || $otherUpdateCoreButton.hasClass( 'updating-message' ) ) {
 				return;
 			}
 
@@ -2089,18 +2106,26 @@
 				$( $( 'tr[data-type]', '#wp-updates-table' ).get().reverse() ).each( function( index, element ) {
 					var $itemRow = $( element );
 
-					if ( $( '.update-link', $itemRow ).prop( 'disabled' ) ) {
+					if ( $itemRow.find( '.update-link' ).prop( 'disabled' ) ) {
 						return;
 					}
 
 					// When there are two core updates (en_US + localized), only update the localized one.
 					if ( 1 < $( '.update-link[data-type="core"]' ).length && 'core' === $itemRow.data( 'type' ) && 'en_US' === $itemRow.data( 'locale' ) ) {
+						$itemRow.find( '.update-link' ).prop( 'disabled', true );
+
 						return;
 					}
 
 					wp.updates.updateItem( $itemRow );
 				} );
 			} else {
+
+				// If this is a core update, disable the other one.
+				if ( 'core' === $message.data( 'type' ) ) {
+					$otherUpdateCoreButton.prop( 'disabled', true );
+				}
+
 				wp.updates.updateItem( $itemRow );
 			}
 		} );
