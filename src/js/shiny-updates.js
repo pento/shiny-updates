@@ -2060,17 +2060,13 @@
 
 				$document.on( 'wp-plugin-update-success wp-theme-update-success wp-core-update-success wp-translations-update-success wp-plugin-update-error wp-theme-update-error wp-core-update-error wp-translations-update-error ', function() {
 					if ( 0 === wp.updates.updateQueue.length ) {
+						// Change the "Update All" button after all updates have been processed.
 						$message
 							.removeClass( 'updating-message' )
 							.addClass( 'updated-message' )
 							.attr( 'aria-label', wp.updates.l10n.updated )
 							.prop( 'disabled', true )
 							.text( wp.updates.l10n.updated );
-
-						// Redirect to about page after a core update took place.
-						if ( wp.updates.coreUpdateRedirect ) {
-							window.location = wp.updates.coreUpdateRedirect;
-						}
 					}
 				} );
 
@@ -2091,6 +2087,13 @@
 				} );
 			} else {
 				wp.updates.updateItem( $itemRow );
+			}
+		} );
+
+		$document.on( 'wp-plugin-update-success wp-theme-update-success wp-core-update-success wp-translations-update-success wp-plugin-update-error wp-theme-update-error wp-core-update-error wp-translations-update-error ', function() {
+			// Redirect to about page if a core update took place.
+			if ( 0 === wp.updates.updateQueue.length && wp.updates.coreUpdateRedirect ) {
+				window.location = wp.updates.coreUpdateRedirect;
 			}
 		} );
 
