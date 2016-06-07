@@ -107,8 +107,10 @@ function su_enqueue_scripts( $hook ) {
 			'installedMsg'               => __( 'Installation completed successfully.' ),
 			/* translators: Activation URL */
 			'importerInstalledMsg'       => __( 'Importer installed successfully. <a href="%s">Activate plugin &#38; run importer</a>' ),
+			/* translators: %s: Theme name */
+			'aysDelete'                  => __( 'Are you sure you want to delete %s?' ),
 			/* translators: %s: Plugin name */
-			'aysDelete'                  => __( 'Are you sure you want to delete %s and its data?' ),
+			'aysDeleteUninstall'         => __( 'Are you sure you want to delete %s and its data?' ),
 			'aysBulkDelete'              => __( 'Are you sure you want to delete the selected plugins and their data?' ),
 			'deleting'                   => __( 'Deleting...' ),
 			/* translators: %s: Error string for a failed deletion */
@@ -219,21 +221,21 @@ function su_admin_notice_template() {
  */
 function su_plugin_update_row_template() {
 ?>
-<script id="tmpl-plugin-update-row" type="text/template">
-	<tr class="plugin-update-tr update" id="{{ data.slug }}-update" data-slug="{{ data.slug }}" data-plugin="{{ data.plugin }}">
+<script id="tmpl-item-update-row" type="text/template">
+	<tr class="plugin-update-tr update" id="{{ data.slug }}-update" data-slug="{{ data.slug }}" <# if ( data.plugin ) { #>data-plugin="{{ data.plugin }}"<# } #>>
 		<td colspan="{{ data.colspan }}" class="plugin-update colspanchange">
 			{{{ data.content }}}
 		</td>
 	</tr>
 </script>
-<script id="tmpl-plugin-deleted-row" type="text/template">
-	<tr class="plugin-deleted-tr inactive deleted" id="{{ data.slug }}-deleted" data-slug="{{ data.slug }}" data-plugin="{{ data.plugin }}">
+<script id="tmpl-item-deleted-row" type="text/template">
+	<tr class="plugin-deleted-tr inactive deleted" id="{{ data.slug }}-deleted" data-slug="{{ data.slug }}" <# if ( data.plugin ) { #>data-plugin="{{ data.plugin }}"<# } #>>
 		<td colspan="{{ data.colspan }}" class="plugin-update colspanchange">
 			<?php
 				printf(
-					/* translators: %s: Plugin name */
-					__( 'The plugin %s was successfully deleted.' ),
-					'<strong>{{{ data.pluginName }}}</strong>'
+					/* translators: %s: Plugin or Theme name */
+					__( '%s was successfully deleted.' ),
+					'<strong>{{{ data.name }}}</strong>'
 				);
 			?>
 		</td>
