@@ -2,11 +2,20 @@
 
 Removes the ugly bits of updating plugins, themes and such.
 
+# WordPress Core reviewers
+If you're here to review Shiny Updates as part of the feature project merge process, please **do not** use the plugin, but rather use the core patch with your local WordPress development environment to test the feature. It's as simple as:
+
+```bash
+$ grunt patch:https://github.com/aaronjorbin/develop.wordpress/pull/5
+```
+Thank you!
+
 ## Installation
 
 1. Download Shiny Updates.
 2. Unzip the folder into the `/wp-content/plugins/` directory.
 3. Activate the plugin through the 'Plugins' menu in WordPress.
+
 
 ### Testing
 We need help testing the user flows! Please [install the Shiny Updates plugin](https://wordpress.org/plugins/shiny-updates/), run the tests below, and share your feedback in the [#feature-shinyupdates](https://wordpress.slack.com/archives/feature-shinyupdates) channel in Slack or [create an issue on GitHub](https://github.com/obenland/shiny-updates/issues).
