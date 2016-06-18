@@ -263,7 +263,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 			<strong><?php echo $theme->display( 'Name' ); ?></strong>
 			<?php
 			printf(
-			/* translators: 1: theme version, 2: new version */
+				/* translators: 1: theme version, 2: new version */
 				__( 'You have version %1$s installed. Update to %2$s.' ),
 				$theme->display( 'Version' ),
 				$theme->update['new_version']
@@ -344,7 +344,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 			'<a href="%1$s" class="thickbox open-plugin-details-modal" aria-label="%2$s">%3$s</a>',
 			esc_url( $details_url ),
 			esc_attr( sprintf(
-			/* translators: 1: Plugin name, 2: Version number */
+				/* translators: 1: Plugin name, 2: Version number */
 				__( 'View %1$s version %2$s details' ),
 				$plugin->Name,
 				$plugin->update->new_version
@@ -358,7 +358,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 			<strong><?php echo $plugin->Name; ?></strong>
 			<?php
 			printf(
-			/* translators: 1: Plugin version, 2: New version */
+				/* translators: 1: Plugin version, 2: New version */
 				__( 'You have version %1$s installed. Update to %2$s.' ),
 				$plugin->Version,
 				$plugin->update->new_version
@@ -411,7 +411,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 				'<p><a href="%1$s" aria-label="%2$s">%3$s</a></p>',
 				esc_url( add_query_arg( 'undismiss', '', $dismiss_url ) ),
 				sprintf(
-				/* translators: 1: WordPress version, 2: locale */
+					/* translators: 1: WordPress version, 2: locale */
 					__( 'Show the WordPress %1$s (%2$s) update' ),
 					$update->current,
 					$update->locale
@@ -433,7 +433,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 
 					if ( ! $this->is_mysql_compatible( $update ) && ! $this->is_php_compatible( $update ) ) {
 						printf(
-						/* translators: 1: WordPress version, 2: Required PHP version, 3: Required MySQL version, 4: Current PHP version, 5: Current MySQL version */
+							/* translators: 1: WordPress version, 2: Required PHP version, 3: Required MySQL version, 4: Current PHP version, 5: Current MySQL version */
 							__( 'You cannot update because <a href="https://codex.wordpress.org/Version_%1$s">WordPress %1$s</a> requires PHP version %2$s or higher and MySQL version %3$s or higher. You are running PHP version %4$s and MySQL version %5$s.' ),
 							$update->current,
 							$update->php_version,
@@ -443,7 +443,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 						);
 					} elseif ( ! $this->is_php_compatible( $update ) ) {
 						printf(
-						/* translators: 1: WordPress version, 2: Required PHP version, 3: Current PHP version */
+							/* translators: 1: WordPress version, 2: Required PHP version, 3: Current PHP version */
 							__( 'You cannot update because <a href="https://codex.wordpress.org/Version_%1$s">WordPress %1$s</a> requires PHP version %2$s or higher. You are running version %3$s.' ),
 							$update->current,
 							$update->php_version,
@@ -451,7 +451,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 						);
 					} elseif ( ! $this->is_mysql_compatible( $update ) ) {
 						printf(
-						/* translators: 1: WordPress version, 2: Required MySQL version, 3: Current MySQL version */
+							/* translators: 1: WordPress version, 2: Required MySQL version, 3: Current MySQL version */
 							__( 'You cannot update because <a href="https://codex.wordpress.org/Version_%1$s">WordPress %1$s</a> requires MySQL version %2$s or higher. You are running version %3$s.' ),
 							$update->current,
 							$update->mysql_version,
@@ -459,7 +459,7 @@ class WP_Updates_List_Table extends WP_List_Table {
 						);
 					} else {
 						printf(
-						/* translators: 1: WordPress version, 2: WordPress version including locale */
+							/* translators: 1: WordPress version, 2: WordPress version including locale */
 							__( 'You can update to <a href="https://codex.wordpress.org/Version_%1$s">WordPress %2$s</a> automatically.' ),
 							$update->current,
 							$version_string
