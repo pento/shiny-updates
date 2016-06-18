@@ -1,0 +1,20 @@
+{
+  "name":        "obenland/shiny-updates",
+  "description": "Allow others to easily embed your blog posts on their sites using oEmbed.",
+  "version":     "3.0.0",
+  "type":        "wordpress-plugin",
+  "license":     "GPL-2.0+",
+  "require":     {
+    "composer/installers": "~1.0"
+  },
+  "require-dev": {
+    "phpmd/phpmd":              "@stable",
+    "wp-coding-standards/wpcs": "dev-develop",
+    "sebastian/phpcpd":         "*",
+    "wimg/php-compatibility":   "dev-master"
+  },
+  "scripts":     {
+    "post-update-cmd":  "rm -rf vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/PHPCompatibility; cp -rp vendor/wimg/php-compatibility vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/PHPCompatibility; \"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs",
+    "post-install-cmd": "rm -rf vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/PHPCompatibility; cp -rp vendor/wimg/php-compatibility vendor/squizlabs/php_codesniffer/CodeSniffer/Standards/PHPCompatibility; \"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs"
+  }
+}
